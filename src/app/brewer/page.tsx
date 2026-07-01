@@ -6,7 +6,7 @@ import { useBrew, Order } from "../../context/BrewContext";
 
 export default function BrewerQueue() {
   const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus } = useBrew();
-  const currentBrewer = brewers.find((b) => b.name === currentUser?.name);
+  const currentBrewer = brewers.find((b) => b.id === currentUser?.id);
 
   const [newOrderAlert, setNewOrderAlert] = useState(false);
   const prevPendingCount = useRef<number | null>(null);
