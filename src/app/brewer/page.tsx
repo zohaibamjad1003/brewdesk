@@ -17,6 +17,9 @@ export default function BrewerQueue() {
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioContextClass) return;
       const ctx = new AudioContextClass();
+      if (ctx.state === "suspended") {
+        ctx.resume();
+      }
       
       // Tone 1: C5
       const osc1 = ctx.createOscillator();
@@ -53,13 +56,27 @@ export default function BrewerQueue() {
     (order) => order.status === "Pending" && order.createdAt.startsWith(systemDate)
   ).length;
 
-  // Request notification permissions on mount
+  // Request notification permissions on mount & setup interaction autoplay listener
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       if (Notification.permission === "default") {
         Notification.requestPermission();
       }
     }
+
+    const resumeAudio = () => {
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          const ctx = new AudioContextClass();
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+        }
+      } catch (e) {}
+    };
+    window.addEventListener("click", resumeAudio);
+    return () => window.removeEventListener("click", resumeAudio);
   }, []);
 
   useEffect(() => {
@@ -195,6 +212,20 @@ export default function BrewerQueue() {
           </button>
         </div>
       )}
+
+      {/* Sound Autoplay Helper Banner */}
+      <div className="mb-6 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 p-4 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-300 select-none">
+        <span className="flex items-center gap-2">
+          <span className="text-base">🔊</span> Click anywhere on this screen to ensure real-time sound order alerts are active.
+        </span>
+        <button
+          type="button"
+          onClick={playNotificationSound}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-neutral-300 dark:border-neutral-750 bg-white dark:bg-neutral-800 px-3.5 py-1.5 font-bold text-neutral-700 dark:text-neutral-200 shadow-xs hover:bg-neutral-100 dark:hover:bg-neutral-700 transition-all cursor-pointer"
+        >
+          🔔 Play Test Chime
+        </button>
+      </div>
 
       {/* Brewer Status working board */}
       {currentUser && (currentUser.role === "Brewer" || currentUser.role === "Admin") && (
