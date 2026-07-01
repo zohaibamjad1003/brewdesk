@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useBrew } from "../context/BrewContext";
 
 export default function Home() {
+  const router = useRouter();
   const {
     floors,
     drinks,
@@ -19,6 +21,17 @@ export default function Home() {
     submitReview,
     systemDate,
   } = useBrew();
+
+  // Automatic client-side redirect based on user role
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === "Brewer") {
+        router.push("/brewer");
+      } else if (currentUser.role === "Admin") {
+        router.push("/admin");
+      }
+    }
+  }, [currentUser, router]);
 
   // Login form states
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");

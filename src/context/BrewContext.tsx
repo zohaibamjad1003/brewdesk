@@ -257,16 +257,18 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
-          if (profile) {
-            const mappedRole = profile.role === "admin" ? "Admin" : profile.role === "brewer" ? "Brewer" : "Employee";
-            setCurrentUser({
-              id: session.user.id,
-              name: profile.name,
-              role: mappedRole,
-              contact: profile.email || session.user.email || "",
-              floor: profile.role === "employee" ? "Floor 2" : undefined,
-            });
-          }
+          const metadata = session.user.user_metadata;
+          const name = profile?.name || metadata?.name || "Anonymous Employee";
+          const roleStr = profile?.role || metadata?.role || "employee";
+          const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
+
+          setCurrentUser({
+            id: session.user.id,
+            name,
+            role: mappedRole,
+            contact: profile?.email || session.user.email || "",
+            floor: roleStr === "employee" ? "Floor 2" : undefined,
+          });
         }
       } catch (err) {
         console.error("Session lookup error:", err);
@@ -282,18 +284,18 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id);
-        if (profile) {
-          const mappedRole = profile.role === "admin" ? "Admin" : profile.role === "brewer" ? "Brewer" : "Employee";
-          setCurrentUser({
-            id: session.user.id,
-            name: profile.name,
-            role: mappedRole,
-            contact: profile.email || session.user.email || "",
-            floor: profile.role === "employee" ? "Floor 2" : undefined,
-          });
-        } else {
-          setCurrentUser(null);
-        }
+        const metadata = session.user.user_metadata;
+        const name = profile?.name || metadata?.name || "Anonymous Employee";
+        const roleStr = profile?.role || metadata?.role || "employee";
+        const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
+
+        setCurrentUser({
+          id: session.user.id,
+          name,
+          role: mappedRole,
+          contact: profile?.email || session.user.email || "",
+          floor: roleStr === "employee" ? "Floor 2" : undefined,
+        });
       } else {
         setCurrentUser(null);
       }
@@ -321,19 +323,18 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data.user) {
         const profile = await fetchUserProfile(data.user.id);
-        if (profile) {
-          const dbRole = profile.role; // 'employee' | 'brewer' | 'admin'
-          const requestedDbRole = role === "Admin" ? "admin" : role === "Brewer" ? "brewer" : "employee";
+        const metadata = data.user.user_metadata;
+        const dbRole = profile?.role || metadata?.role || "employee";
+        const requestedDbRole = role === "Admin" ? "admin" : role === "Brewer" ? "brewer" : "employee";
 
-          if (dbRole !== requestedDbRole) {
-            // Sign out immediately due to credentials/role mismatch
-            await supabase.auth.signOut();
-            setLoading(false);
-            return { 
-              success: false, 
-              error: `Role Mismatch. This account is registered as a '${dbRole}', not '${requestedDbRole}'.` 
-            };
-          }
+        if (dbRole !== requestedDbRole) {
+          // Sign out immediately due to credentials/role mismatch
+          await supabase.auth.signOut();
+          setLoading(false);
+          return { 
+            success: false, 
+            error: `Role Mismatch. This account is registered as a '${dbRole}', not '${requestedDbRole}'.` 
+          };
         }
       }
 
