@@ -26,7 +26,7 @@ export interface BrewerItem {
   id: string;
   name: string;
   contact: string; // Email or Phone/Contact info
-  status: "Active" | "On Break" | "Absent";
+  status: "Active" | "On Break" | "Off";
 }
 
 // Define the Order Review details
@@ -54,9 +54,9 @@ interface BrewContextType {
   login: (email: string, password: string, role: "Employee" | "Brewer" | "Admin") => Promise<{ success: boolean; error?: string }>;
   signUp: (name: string, email: string, password: string, role: "Employee" | "Brewer") => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  placeOrder: (employeeName: string, floor: string, drink: string, sugar: string) => void;
-  updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => void;
-  submitReview: (orderId: string, rating: number, comments: string) => void;
+  placeOrder: (employeeName: string, floor: string, drink: string, sugar: string) => Promise<void>;
+  updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => Promise<void>;
+  submitReview: (orderId: string, rating: number, comments: string) => Promise<void>;
   addFloor: (floorName: string) => void;
   deleteFloor: (floorName: string) => void;
   updateFloor: (oldFloorName: string, newFloorName: string) => void;
@@ -66,9 +66,8 @@ interface BrewContextType {
   addBrewer: (name: string, contact: string) => void;
   deleteBrewer: (id: string) => void;
   updateBrewer: (id: string, name: string, contact: string) => void;
-  updateBrewerStatus: (id: string, status: "Active" | "On Break" | "Absent") => void;
+  updateBrewerStatus: (id: string, status: "Active" | "On Break" | "Off") => Promise<void>;
   systemDate: string; // YYYY-MM-DD
-  advanceSystemDate: () => void;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -77,10 +76,8 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const drinks = ["Chai", "Coffee", "Green Tea"];
   const sugarOptions = ["Sugar", "No Sugar"];
 
-  // Initialize systemDate to today's real physical date
-  const [systemDate, setSystemDate] = useState<string>(() => {
-    return new Date().toISOString().split("T")[0];
-  });
+  // Keep systemDate dynamically resolved to today's UTC-synced calendar date (YYYY-MM-DD)
+  const systemDate = new Date().toISOString().split("T")[0];
 
   const [floors, setFloors] = useState<string[]>([
     "Ground Floor",
@@ -98,11 +95,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     { id: "e6", name: "Ethan Hunt", contact: "ethan@brewdesk.com" },
   ]);
 
-  const [brewers, setBrewers] = useState<BrewerItem[]>([
-    { id: "d1", name: "Raju Dev", contact: "raju@brewdesk.com", status: "Active" },
-    { id: "d2", name: "Suresh Kumar", contact: "suresh@brewdesk.com", status: "On Break" },
-  ]);
-
+  const [brewers, setBrewers] = useState<BrewerItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
 
   // Authenticated user and profile resolution loading states
@@ -119,118 +112,114 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // State to hold list of orders
   const [orders, setOrders] = useState<Order[]>([]);
 
-  // Pre-populate orders dynamically on startup relative to the initial system date
+  // Fetch orders from database
+  const fetchOrders = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("orders")
+        .select(`
+          id,
+          floor_name,
+          drink_name,
+          sugar,
+          status,
+          created_at,
+          feedback_rating,
+          feedback_comments,
+          employee_id,
+          profiles ( name, email )
+        `)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching orders:", error.message);
+        return;
+      }
+
+      const mappedOrders = data.map((o: any) => ({
+        id: o.id,
+        employeeName: o.profiles?.name || "Anonymous Employee",
+        floor: o.floor_name,
+        drink: o.drink_name,
+        sugar: o.sugar,
+        status: o.status,
+        createdAt: o.created_at,
+      }));
+      setOrders(mappedOrders);
+
+      const mappedReviews = data
+        .filter((o: any) => o.feedback_rating !== null)
+        .map((o: any) => ({
+          id: o.id,
+          orderId: o.id,
+          employeeName: o.profiles?.name || "Anonymous Employee",
+          drinkName: o.drink_name,
+          rating: o.feedback_rating,
+          comments: o.feedback_comments || "",
+          createdAt: o.created_at,
+        }));
+      setReviews(mappedReviews);
+    } catch (err) {
+      console.error("Orders fetching exception:", err);
+    }
+  };
+
+  // Fetch brewers from database
+  const fetchBrewersList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, email, status")
+        .eq("role", "brewer");
+
+      if (error) {
+        console.error("Error fetching brewers:", error.message);
+        return;
+      }
+
+      const mappedBrewers = data.map((b: any) => ({
+        id: b.id,
+        name: b.name,
+        contact: b.email || "",
+        status: (b.status === "On Break" ? "On Break" : b.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
+      }));
+      setBrewers(mappedBrewers);
+    } catch (err) {
+      console.error("Brewers fetching exception:", err);
+    }
+  };
+
+  // Fetch initial database items and listen to real-time updates
   useEffect(() => {
-    const today = new Date(systemDate);
-    
-    const getRelativeDateISO = (daysAgo: number, hour: number, minute: number) => {
-      const date = new Date(today);
-      date.setDate(date.getDate() - daysAgo);
-      date.setHours(hour, minute, 0, 0);
-      return date.toISOString();
+    fetchOrders();
+    fetchBrewersList();
+
+    const ordersChannel = supabase
+      .channel("realtime-orders")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "orders" },
+        () => {
+          fetchOrders();
+        }
+      )
+      .subscribe();
+
+    const profilesChannel = supabase
+      .channel("realtime-profiles")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          fetchBrewersList();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+      supabase.removeChannel(profilesChannel);
     };
-
-    const initialOrders: Order[] = [
-      // 2 Days Ago orders (All delivered)
-      {
-        id: "hist-1",
-        employeeName: "Alice Smith",
-        floor: "Ground Floor",
-        drink: "Chai",
-        sugar: "Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(2, 9, 30),
-      },
-      {
-        id: "hist-2",
-        employeeName: "Bob Johnson",
-        floor: "Floor 2",
-        drink: "Coffee",
-        sugar: "No Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(2, 11, 15),
-      },
-      // Yesterday orders (All delivered)
-      {
-        id: "hist-3",
-        employeeName: "Charlie Brown",
-        floor: "Floor 1",
-        drink: "Green Tea",
-        sugar: "No Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(1, 10, 0),
-      },
-      {
-        id: "hist-4",
-        employeeName: "Diana Prince",
-        floor: "Floor 3",
-        drink: "Chai",
-        sugar: "Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(1, 14, 20),
-      },
-      {
-        id: "hist-5",
-        employeeName: "Ethan Hunt",
-        floor: "Floor 2",
-        drink: "Coffee",
-        sugar: "Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(1, 16, 45),
-      },
-      // Today orders (Mix of pending/on the way/delivered)
-      {
-        id: "hist-6",
-        employeeName: "Alice Smith",
-        floor: "Ground Floor",
-        drink: "Chai",
-        sugar: "Sugar",
-        status: "Delivered",
-        createdAt: getRelativeDateISO(0, 8, 15),
-      },
-      {
-        id: "hist-7",
-        employeeName: "Bob Johnson",
-        floor: "Floor 2",
-        drink: "Coffee",
-        sugar: "No Sugar",
-        status: "On the way",
-        createdAt: getRelativeDateISO(0, 10, 30),
-      },
-      {
-        id: "hist-8",
-        employeeName: "Charlie Brown",
-        floor: "Floor 1",
-        drink: "Green Tea",
-        sugar: "No Sugar",
-        status: "Pending",
-        createdAt: getRelativeDateISO(0, 11, 40),
-      },
-    ];
-
-    setOrders(initialOrders);
-
-    const initialReviews: Review[] = [
-      {
-        id: "r1",
-        orderId: "hist-1",
-        employeeName: "Alice Smith",
-        drinkName: "Chai",
-        rating: 5,
-        comments: "Excellent chai, perfectly sweet!",
-        createdAt: getRelativeDateISO(2, 9, 50),
-      },
-      {
-        id: "r2",
-        orderId: "hist-3",
-        employeeName: "Charlie Brown",
-        drinkName: "Green Tea",
-        rating: 4,
-        comments: "Quick delivery and nice aroma.",
-        createdAt: getRelativeDateISO(1, 10, 15),
-      },
-    ];
-    setReviews(initialReviews);
   }, []);
 
   // Fetch public user profile matching Auth user ID
@@ -394,46 +383,55 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Function to place a new order
-  const placeOrder = (employeeName: string, floor: string, drink: string, sugar: string) => {
-    const realNow = new Date();
-    const orderDate = new Date(`${systemDate}T${realNow.toTimeString().split(" ")[0]}`);
-
-    const newOrder: Order = {
-      id: Math.random().toString(36).substring(2, 9),
-      employeeName,
-      floor,
-      drink,
-      sugar,
-      status: "Pending",
-      createdAt: orderDate.toISOString(),
-    };
-    setOrders((prevOrders) => [...prevOrders, newOrder]);
+  const placeOrder = async (employeeName: string, floor: string, drink: string, sugar: string) => {
+    if (!currentUser) return;
+    try {
+      const { error } = await supabase.from("orders").insert({
+        employee_id: currentUser.id,
+        floor_name: floor,
+        drink_name: drink,
+        sugar: sugar, // enum 'Sugar' | 'No Sugar'
+        status: "Pending",
+      });
+      if (error) {
+        console.error("Error inserting order:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception placing order:", err);
+    }
   };
 
   // Function to update an existing order's status
-  const updateOrderStatus = (id: string, newStatus: "Pending" | "On the way" | "Delivered") => {
-    setOrders((prevOrders) =>
-      prevOrders.map((order) =>
-        order.id === id ? { ...order, status: newStatus } : order
-      )
-    );
+  const updateOrderStatus = async (id: string, newStatus: "Pending" | "On the way" | "Delivered") => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating status:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating status:", err);
+    }
   };
 
   // Function to submit a review/improvement feedback
-  const submitReview = (orderId: string, rating: number, comments: string) => {
-    const order = orders.find((o) => o.id === orderId);
-    if (!order) return;
-
-    const newReview: Review = {
-      id: Math.random().toString(36).substring(2, 9),
-      orderId,
-      employeeName: order.employeeName,
-      drinkName: order.drink,
-      rating,
-      comments: comments.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    setReviews((prev) => [...prev, newReview]);
+  const submitReview = async (orderId: string, rating: number, comments: string) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          feedback_rating: rating,
+          feedback_comments: comments,
+        })
+        .eq("id", orderId);
+      if (error) {
+        console.error("Error submitting review:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception submitting review:", err);
+    }
   };
 
   // Admin: Add Floor
@@ -518,19 +516,18 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Admin / Brewer: Update Brewer Status
-  const updateBrewerStatus = (id: string, status: "Active" | "On Break" | "Absent") => {
-    setBrewers((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status } : b))
-    );
-  };
-
-  // Admin: Simulate Next Day
-  const advanceSystemDate = () => {
-    setSystemDate((prevDate) => {
-      const d = new Date(prevDate);
-      d.setDate(d.getDate() + 1);
-      return d.toISOString().split("T")[0];
-    });
+  const updateBrewerStatus = async (id: string, status: "Active" | "On Break" | "Off") => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ status })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating status:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating status:", err);
+    }
   };
 
   return (
@@ -562,7 +559,6 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateBrewer,
         updateBrewerStatus,
         systemDate,
-        advanceSystemDate,
       }}
     >
       {children}

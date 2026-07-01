@@ -881,13 +881,13 @@ export default function Home() {
                 let badgeClass = "";
                 if (bwr.status === "Active") badgeClass = "bg-emerald-50 text-emerald-800 ring-emerald-600/20";
                 if (bwr.status === "On Break") badgeClass = "bg-amber-50 text-amber-800 ring-amber-600/20";
-                if (bwr.status === "Absent") badgeClass = "bg-red-50 text-red-800 ring-red-600/20";
+                if (bwr.status === "Off") badgeClass = "bg-neutral-50 text-neutral-800 ring-neutral-600/20";
 
                 return (
                   <div key={bwr.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0 border-neutral-100">
                     <span className="font-semibold text-neutral-800">{bwr.name}</span>
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>
-                      {bwr.status === "Active" ? "🟢 Active" : bwr.status === "On Break" ? "🟡 On Break" : "🔴 Absent"}
+                      {bwr.status === "Active" ? "🟢 Active" : bwr.status === "On Break" ? "🟡 On Break" : "⚪ Off"}
                     </span>
                   </div>
                 );

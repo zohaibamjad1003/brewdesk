@@ -23,7 +23,6 @@ export default function AdminDashboard() {
     updateBrewer,
     updateBrewerStatus,
     systemDate,
-    advanceSystemDate,
     currentUser,
     loading,
   } = useBrew();
@@ -56,7 +55,7 @@ export default function AdminDashboard() {
   const [editingBrewerId, setEditingBrewerId] = useState<string | null>(null);
   const [editingBrewerName, setEditingBrewerName] = useState("");
   const [editingBrewerContact, setEditingBrewerContact] = useState("");
-  const [editingBrewerStatus, setEditingBrewerStatus] = useState<"Active" | "On Break" | "Absent">("Active");
+  const [editingBrewerStatus, setEditingBrewerStatus] = useState<"Active" | "On Break" | "Off">("Active");
 
   // Sorting options
   const [floorSortOrder, setFloorSortOrder] = useState<"default" | "alpha">("default");
@@ -227,7 +226,7 @@ export default function AdminDashboard() {
   };
 
   // Inline Edit Handlers for Brewer
-  const handleEditBrewerStart = (bwr: { id: string; name: string; contact: string; status: "Active" | "On Break" | "Absent" }) => {
+  const handleEditBrewerStart = (bwr: { id: string; name: string; contact: string; status: "Active" | "On Break" | "Off" }) => {
     setEditingBrewerId(bwr.id);
     setEditingBrewerName(bwr.name);
     setEditingBrewerContact(bwr.contact);
@@ -241,14 +240,9 @@ export default function AdminDashboard() {
     setEditingBrewerId(null);
   };
 
-  // Trigger simulated new day
-  const handleNewDayClick = () => {
-    advanceSystemDate();
-    setSelectedFilterDate(""); // automatically focus back to the new systemDate
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-    }, 4000);
+  // Date selection reset trigger
+  const handleResetFilterDate = () => {
+    setSelectedFilterDate("");
   };
 
   const getStatusTextClass = (status: "Pending" | "On the way" | "Delivered") => {
@@ -264,19 +258,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {/* Toast Notification */}
-      {showToast && (
-        <div className="fixed bottom-5 right-5 z-50 flex max-w-md animate-bounce rounded-lg border border-amber-100 bg-white p-4 shadow-lg">
-          <div className="flex items-center gap-3">
-            <span className="text-xl">☀️</span>
-            <div>
-              <p className="text-sm font-bold text-neutral-900">New Day Started!</p>
-              <p className="text-xs text-neutral-500 mt-0.5">Today's orders set to 0. Yesterday's records archived.</p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header Info */}
       <div className="mb-8 border-b border-neutral-200 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -284,11 +265,11 @@ export default function AdminDashboard() {
             Admin Control Panel
           </h1>
           <p className="mt-2 text-sm text-neutral-500">
-            Active Simulated Date: <span className="font-semibold text-neutral-800">{systemDate}</span>
+            Today's Date: <span className="font-semibold text-neutral-800">{systemDate}</span>
           </p>
         </div>
 
-        {/* Date Filter & New Day Sim Action */}
+        {/* Date Filter */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <label htmlFor="date-select" className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
@@ -307,13 +288,6 @@ export default function AdminDashboard() {
               ))}
             </select>
           </div>
-          <button
-            type="button"
-            onClick={handleNewDayClick}
-            className="flex items-center gap-1.5 rounded-lg bg-amber-700 px-4 py-2 text-sm font-bold text-white shadow-sm hover:bg-amber-800 transition-all focus:outline-none"
-          >
-            ☀️ Start New Day
-          </button>
         </div>
       </div>
 
@@ -718,7 +692,7 @@ export default function AdminDashboard() {
                 let badgeClass = "";
                 if (bwr.status === "Active") badgeClass = "bg-emerald-50 text-emerald-700 ring-emerald-600/10";
                 if (bwr.status === "On Break") badgeClass = "bg-amber-50 text-amber-700 ring-amber-600/10";
-                if (bwr.status === "Absent") badgeClass = "bg-red-50 text-red-700 ring-red-600/10";
+                if (bwr.status === "Off") badgeClass = "bg-neutral-50 text-neutral-700 ring-neutral-600/10";
 
                 return (
                   <li key={bwr.id} className="py-2.5 text-sm">
@@ -752,7 +726,7 @@ export default function AdminDashboard() {
                           >
                             <option value="Active">🟢 Active</option>
                             <option value="On Break">🟡 On Break</option>
-                            <option value="Absent">🔴 Absent</option>
+                            <option value="Off">⚪ Off</option>
                           </select>
                         </div>
                         <div className="flex gap-1.5 justify-end">

@@ -53,6 +53,15 @@ export default function BrewerQueue() {
     (order) => order.status === "Pending" && order.createdAt.startsWith(systemDate)
   ).length;
 
+  // Request notification permissions on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && "Notification" in window) {
+      if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+    }
+  }, []);
+
   useEffect(() => {
     if (loading) return;
 
@@ -64,6 +73,18 @@ export default function BrewerQueue() {
     if (activePendingOrdersCount > prevPendingCount.current) {
       playNotificationSound();
       setNewOrderAlert(true);
+
+      // Trigger native system notification
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          new Notification("☕ New Order Received!", {
+            body: "An employee has placed a new order. Check preparation queue!",
+            silent: true,
+          });
+        } catch (err) {
+          console.warn("System Notification error:", err);
+        }
+      }
     }
 
     prevPendingCount.current = activePendingOrdersCount;
@@ -133,7 +154,7 @@ export default function BrewerQueue() {
           <p className="mt-2 text-sm text-neutral-500 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>Manage beverage requests. Keep track of what needs brewing and what is on the way.</span>
             <span className="inline-flex items-center rounded bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-600 border border-neutral-200">
-              📅 Simulated Date: {systemDate}
+              📅 Today: {systemDate}
             </span>
           </p>
         </div>
@@ -183,12 +204,12 @@ export default function BrewerQueue() {
             <p className="text-xs text-neutral-500 mt-0.5">Employees and Admins will see your active status in real-time.</p>
           </div>
           <div className="flex gap-2">
-            {(["Active", "On Break", "Absent"] as const).map((st) => {
+            {(["Active", "On Break", "Off"] as const).map((st) => {
               const isSelected = currentBrewer.status === st;
               let colorClass = "";
               if (st === "Active") colorClass = isSelected ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100";
               if (st === "On Break") colorClass = isSelected ? "bg-amber-600 text-white border-amber-600 hover:bg-amber-700" : "text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100";
-              if (st === "Absent") colorClass = isSelected ? "bg-red-600 text-white border-red-600 hover:bg-red-700" : "text-red-700 bg-red-50 border-red-200 hover:bg-red-100";
+              if (st === "Off") colorClass = isSelected ? "bg-neutral-600 text-white border-neutral-600 hover:bg-neutral-700" : "text-neutral-700 bg-neutral-50 border-neutral-200 hover:bg-neutral-100";
 
               return (
                 <button
@@ -197,7 +218,7 @@ export default function BrewerQueue() {
                   onClick={() => updateBrewerStatus(currentBrewer.id, st)}
                   className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all shadow-sm ${colorClass}`}
                 >
-                  {st === "Active" ? "🟢 Active" : st === "On Break" ? "🟡 On Break" : "🔴 Absent"}
+                  {st === "Active" ? "🟢 Active" : st === "On Break" ? "🟡 On Break" : "⚪ Off"}
                 </button>
               );
             })}
