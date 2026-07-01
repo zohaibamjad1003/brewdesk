@@ -58,6 +58,7 @@ interface BrewContextType {
   submitReview: (orderId: string, rating: number, comments: string) => void;
   addFloor: (floorName: string) => void;
   deleteFloor: (floorName: string) => void;
+  updateFloor: (oldFloorName: string, newFloorName: string) => void;
   addEmployee: (name: string, contact: string) => void;
   deleteEmployee: (id: string) => void;
   updateEmployee: (id: string, name: string, contact: string) => void;
@@ -445,6 +446,14 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFloors((prev) => prev.filter((f) => f !== floorName));
   };
 
+  // Admin: Update Floor
+  const updateFloor = (oldFloorName: string, newFloorName: string) => {
+    const trimmedNew = newFloorName.trim();
+    if (trimmedNew !== "" && !floors.includes(trimmedNew)) {
+      setFloors((prev) => prev.map((f) => (f === oldFloorName ? trimmedNew : f)));
+    }
+  };
+
   // Admin: Add Employee
   const addEmployee = (name: string, contact: string) => {
     const trimmedName = name.trim();
@@ -534,6 +543,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         submitReview,
         addFloor,
         deleteFloor,
+        updateFloor,
         addEmployee,
         deleteEmployee,
         updateEmployee,

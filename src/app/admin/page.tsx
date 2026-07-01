@@ -14,6 +14,7 @@ export default function AdminDashboard() {
     drinks,
     addFloor,
     deleteFloor,
+    updateFloor,
     addEmployee,
     deleteEmployee,
     updateEmployee,
@@ -32,6 +33,10 @@ export default function AdminDashboard() {
 
   // Local state for management forms
   const [newFloorName, setNewFloorName] = useState("");
+
+  // Floor inline edit state
+  const [editingFloorName, setEditingFloorName] = useState<string | null>(null);
+  const [editingFloorNewName, setEditingFloorNewName] = useState("");
   
   // Employee add form state
   const [newEmployeeName, setNewEmployeeName] = useState("");
@@ -174,6 +179,18 @@ export default function AdminDashboard() {
     addBrewer(newBrewerName, newBrewerContact);
     setNewBrewerName("");
     setNewBrewerContact("");
+  };
+
+  // Inline Edit Handlers for Floor
+  const handleEditFloorStart = (floor: string) => {
+    setEditingFloorName(floor);
+    setEditingFloorNewName(floor);
+  };
+
+  const handleEditFloorSave = (oldFloor: string) => {
+    if (editingFloorNewName.trim() === "") return;
+    updateFloor(oldFloor, editingFloorNewName);
+    setEditingFloorName(null);
   };
 
   // Inline Edit Handlers for Employee
@@ -446,18 +463,60 @@ export default function AdminDashboard() {
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
-              {floors.map((floor) => (
-                <li key={floor} className="flex items-center justify-between py-2 text-sm">
-                  <span className="font-medium text-neutral-800">{floor}</span>
-                  <button
-                    type="button"
-                    onClick={() => deleteFloor(floor)}
-                    className="text-xs text-red-500 hover:text-red-700 font-semibold p-1 hover:underline"
-                  >
-                    Delete
-                  </button>
-                </li>
-              ))}
+              {floors.map((floor) => {
+                const isEditing = editingFloorName === floor;
+                return (
+                  <li key={floor} className="py-2 text-sm">
+                    {isEditing ? (
+                      <div className="space-y-2 bg-neutral-50 p-2 rounded border border-neutral-200 shadow-inner">
+                        <input
+                          type="text"
+                          required
+                          value={editingFloorNewName}
+                          onChange={(e) => setEditingFloorNewName(e.target.value)}
+                          className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
+                        />
+                        <div className="flex gap-1.5 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => setEditingFloorName(null)}
+                            className="text-[11px] font-bold text-neutral-600 hover:text-neutral-800 px-2 py-1 bg-white border border-neutral-200 rounded transition-all"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEditFloorSave(floor)}
+                            className="text-[11px] font-bold text-white hover:bg-neutral-800 bg-neutral-950 px-2.5 py-1 rounded transition-all"
+                          >
+                            Save
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-neutral-800">{floor}</span>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleEditFloorStart(floor)}
+                            className="text-xs text-amber-700 hover:text-amber-900 font-semibold p-1 hover:underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => deleteFloor(floor)}
+                            className="text-xs text-red-500 hover:text-red-700 font-semibold p-1 hover:underline"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </div>
