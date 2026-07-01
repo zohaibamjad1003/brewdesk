@@ -86,14 +86,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     "Floor 3",
   ]);
 
-  const [employees, setEmployees] = useState<EmployeeItem[]>([
-    { id: "e1", name: "Alex Mercer", contact: "alex@brewdesk.com" },
-    { id: "e2", name: "Alice Smith", contact: "alice@brewdesk.com" },
-    { id: "e3", name: "Bob Johnson", contact: "bob@brewdesk.com" },
-    { id: "e4", name: "Charlie Brown", contact: "charlie@brewdesk.com" },
-    { id: "e5", name: "Diana Prince", contact: "diana@brewdesk.com" },
-    { id: "e6", name: "Ethan Hunt", contact: "ethan@brewdesk.com" },
-  ]);
+  const [employees, setEmployees] = useState<EmployeeItem[]>([]);
 
   const [brewers, setBrewers] = useState<BrewerItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -183,10 +176,35 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Fetch employees from database
+  const fetchEmployeesList = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .eq("role", "employee");
+
+      if (error) {
+        console.error("Error fetching employees:", error.message);
+        return;
+      }
+
+      const mappedEmployees = data.map((e: any) => ({
+        id: e.id,
+        name: e.name,
+        contact: e.email || "N/A",
+      }));
+      setEmployees(mappedEmployees);
+    } catch (err) {
+      console.error("Employees fetching exception:", err);
+    }
+  };
+
   // Fetch initial database items and listen to real-time updates
   useEffect(() => {
     fetchOrders();
     fetchBrewersList();
+    fetchEmployeesList();
 
     const ordersChannel = supabase
       .channel("realtime-orders")
@@ -206,6 +224,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { event: "*", schema: "public", table: "profiles" },
         () => {
           fetchBrewersList();
+          fetchEmployeesList();
         }
       )
       .subscribe();
@@ -452,62 +471,71 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Admin: Add Employee
   const addEmployee = (name: string, contact: string) => {
-    const trimmedName = name.trim();
-    const trimmedContact = contact.trim();
-    if (trimmedName !== "" && !employees.some((e) => e.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newEmp: EmployeeItem = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: trimmedName,
-        contact: trimmedContact || "N/A",
-      };
-      setEmployees((prev) => [...prev, newEmp]);
-    }
+    alert("New employees must register an account using the Sign Up form on the main page to create their login credentials.");
   };
 
   // Admin: Delete Employee by ID
-  const deleteEmployee = (id: string) => {
-    setEmployees((prev) => prev.filter((e) => e.id !== id));
+  const deleteEmployee = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", id);
+      if (error) {
+        console.error("Error deleting employee:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception deleting employee:", err);
+    }
   };
 
   // Admin: Update Employee
-  const updateEmployee = (id: string, name: string, contact: string) => {
-    const trimmedName = name.trim();
-    const trimmedContact = contact.trim();
-    if (trimmedName !== "") {
-      setEmployees((prev) =>
-        prev.map((e) => (e.id === id ? { ...e, name: trimmedName, contact: trimmedContact || "N/A" } : e))
-      );
+  const updateEmployee = async (id: string, name: string, contact: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name, email: contact })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating employee:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating employee:", err);
     }
   };
 
   // Admin: Add Brewer
   const addBrewer = (name: string, contact: string) => {
-    const trimmedName = name.trim();
-    const trimmedContact = contact.trim();
-    if (trimmedName !== "" && !brewers.some((b) => b.name.toLowerCase() === trimmedName.toLowerCase())) {
-      const newStaff: BrewerItem = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: trimmedName,
-        contact: trimmedContact || "N/A",
-        status: "Active",
-      };
-      setBrewers((prev) => [...prev, newStaff]);
-    }
+    alert("New brewers must register an account using the Sign Up form on the main page to create their login credentials.");
   };
 
   // Admin: Delete Brewer by ID
-  const deleteBrewer = (id: string) => {
-    setBrewers((prev) => prev.filter((b) => b.id !== id));
+  const deleteBrewer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", id);
+      if (error) {
+        console.error("Error deleting brewer:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception deleting brewer:", err);
+    }
   };
 
   // Admin: Update Brewer
-  const updateBrewer = (id: string, name: string, contact: string) => {
-    const trimmedName = name.trim();
-    const trimmedContact = contact.trim();
-    if (trimmedName !== "") {
-      setBrewers((prev) =>
-        prev.map((b) => (b.id === id ? { ...b, name: trimmedName, contact: trimmedContact || "N/A" } : b))
-      );
+  const updateBrewer = async (id: string, name: string, contact: string) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ name, email: contact })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating brewer:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating brewer:", err);
     }
   };
 
