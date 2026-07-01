@@ -259,27 +259,27 @@ export default function AdminDashboard() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Header Info */}
-      <div className="mb-8 border-b border-neutral-200 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="mb-8 border-b border-neutral-200 dark:border-neutral-800 pb-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             Admin Control Panel
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">
-            Today's Date: <span className="font-semibold text-neutral-800">{systemDate}</span>
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-300">
+            Today's Date: <span className="font-semibold text-neutral-800 dark:text-neutral-200">{systemDate}</span>
           </p>
         </div>
 
         {/* Date Filter */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label htmlFor="date-select" className="text-xs font-bold text-neutral-500 uppercase tracking-wider">
+            <label htmlFor="date-select" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
               Filter Day:
             </label>
             <select
               id="date-select"
               value={activeFilterDate}
               onChange={(e) => setSelectedFilterDate(e.target.value)}
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm font-semibold text-neutral-700 shadow-sm focus:border-neutral-950 focus:outline-none"
+              className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:border-neutral-950 focus:outline-none"
             >
               {uniqueDates.map((d) => (
                 <option key={d} value={d}>

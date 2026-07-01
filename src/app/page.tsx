@@ -675,18 +675,18 @@ export default function Home() {
       )}
 
       {/* Header Info */}
-      <div className="mb-8 border-b border-neutral-200 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="mb-8 border-b border-neutral-200 dark:border-neutral-800 pb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-neutral-900 dark:text-neutral-100">
             Place a Beverage Order
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-300">
             Select your floor and beverage preferences. Your order goes straight to the Brewer workstation.
           </p>
         </div>
-        <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2 text-center shadow-sm">
-          <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider block">Active Work Day</span>
-          <span className="text-sm font-bold text-neutral-800">{systemDate}</span>
+        <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
+          <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Active Work Day</span>
+          <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{systemDate}</span>
         </div>
       </div>
 
