@@ -10,6 +10,7 @@ export default function Home() {
     drinks,
     sugarOptions,
     currentUser,
+    loading,
     login,
     signUp,
     placeOrder,
@@ -22,14 +23,19 @@ export default function Home() {
   // Login form states
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
   const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
   const [authRole, setAuthRole] = useState<"Employee" | "Brewer" | "Admin">("Employee");
   const [authError, setAuthError] = useState("");
 
   // Signup form states
   const [signUpName, setSignUpName] = useState("");
-  const [signUpContact, setSignUpContact] = useState("");
+  const [signUpEmail, setSignUpEmail] = useState("");
+  const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpRole, setSignUpRole] = useState<"Employee" | "Brewer">("Employee");
   const [signUpError, setSignUpError] = useState("");
+
+  // Submission spinner
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Order form states
   const [selectedFloor, setSelectedFloor] = useState("");
@@ -100,27 +106,36 @@ export default function Home() {
   }, [currentUser, floors, drinks, sugarOptions]);
 
   // Handle Login submission
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
-    const success = login(authEmail, authRole);
-    if (!success) {
-      setAuthError(`Invalid name or email for simulated role: ${authRole}. Try quick bypass logins below!`);
+    setIsSubmitting(true);
+    const result = await login(authEmail, authPassword, authRole);
+    setIsSubmitting(false);
+    if (!result.success) {
+      setAuthError(result.error || "Login credentials failed.");
     } else {
       setAuthEmail("");
+      setAuthPassword("");
     }
   };
 
   // Handle Signup submission
-  const handleSignUpSubmit = (e: React.FormEvent) => {
+  const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignUpError("");
-    const success = signUp(signUpName, signUpContact, signUpRole);
-    if (!success) {
-      setSignUpError("A user with this email/contact is already registered.");
+    setIsSubmitting(true);
+    const result = await signUp(signUpName, signUpEmail, signUpPassword, signUpRole);
+    setIsSubmitting(false);
+    if (!result.success) {
+      setSignUpError(result.error || "Sign-up account creation failed.");
     } else {
       setSignUpName("");
-      setSignUpContact("");
+      setSignUpEmail("");
+      setSignUpPassword("");
+      if (result.error) {
+        alert(result.error); // Display signup confirmation emails details
+      }
     }
   };
 
@@ -165,7 +180,6 @@ export default function Home() {
 
     submitReview(reviewOrderId, reviewRating, reviewComments);
 
-    // Reset review form state
     setReviewOrderId(null);
     setReviewRating(5);
     setReviewComments("");
@@ -211,6 +225,23 @@ export default function Home() {
     }
   };
 
+  // Helper to fill pre-defined credentials for development bypasses
+  const applyBypass = (email: string, role: "Employee" | "Brewer" | "Admin") => {
+    setAuthEmail(email);
+    setAuthPassword("123456"); // Assuming a default passcode is set up for seeded test users
+    setAuthRole(role);
+  };
+
+  // RENDER LOADING: Display splash/spinner while resolving Supabase session
+  if (loading) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center min-h-[50vh] p-8">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-800" />
+        <p className="mt-4 text-sm font-semibold text-neutral-500">Resolving auth session...</p>
+      </div>
+    );
+  }
+
   // RENDER GATE: If not logged in, render Signup/Login form (Mobile Card Style)
   if (!currentUser) {
     return (
@@ -218,11 +249,11 @@ export default function Home() {
         <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl border border-neutral-200 shadow-lg">
           <div className="text-center">
             <span className="text-5xl select-none">☕</span>
-            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-neutral-900">
+            <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-neutral-900 animate-pulse">
               Welcome to BrewDesk
             </h2>
             <p className="mt-2 text-sm text-neutral-500">
-              Your office chai & coffee delivery workstation.
+              Supabase Auth Workstation Gate.
             </p>
           </div>
 
@@ -264,13 +295,14 @@ export default function Home() {
                   {authError}
                 </div>
               )}
+              
               <div>
                 <label htmlFor="login-email" className="block text-sm font-semibold text-neutral-700">
-                  Name or Email Address
+                  Email Address
                 </label>
                 <input
                   id="login-email"
-                  type="text"
+                  type="email"
                   required
                   value={authEmail}
                   onChange={(e) => setAuthEmail(e.target.value)}
@@ -280,8 +312,23 @@ export default function Home() {
               </div>
 
               <div>
+                <label htmlFor="login-pass" className="block text-sm font-semibold text-neutral-700">
+                  Password
+                </label>
+                <input
+                  id="login-pass"
+                  type="password"
+                  required
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                />
+              </div>
+
+              <div>
                 <label htmlFor="login-role" className="block text-sm font-semibold text-neutral-700">
-                  Select Role
+                  Sign In As Role
                 </label>
                 <select
                   id="login-role"
@@ -297,39 +344,34 @@ export default function Home() {
 
               <button
                 type="submit"
-                className="w-full flex justify-center items-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all mt-4"
+                disabled={isSubmitting}
+                className="w-full flex justify-center items-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all mt-4 disabled:opacity-50"
               >
-                Sign In
+                {isSubmitting ? "Signing In..." : "Sign In"}
               </button>
 
-              {/* Dev bypass helpers */}
+              {/* Dev bypass helper fills */}
               <div className="mt-6 border-t border-neutral-100 pt-4 text-center">
-                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Quick Bypass Logins</span>
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Quick Autofill Logins</span>
                 <div className="flex flex-wrap justify-center gap-1.5 mt-2">
                   <button
                     type="button"
-                    onClick={() => {
-                      login("alex@brewdesk.com", "Employee");
-                    }}
-                    className="px-2 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700"
+                    onClick={() => applyBypass("alex@brewdesk.com", "Employee")}
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
                   >
                     Employee (Alex)
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      login("raju@brewdesk.com", "Brewer");
-                    }}
-                    className="px-2 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700"
+                    onClick={() => applyBypass("raju@brewdesk.com", "Brewer")}
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
                   >
                     Brewer (Raju)
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      login("admin", "Admin");
-                    }}
-                    className="px-2 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700"
+                    onClick={() => applyBypass("admin@brewdesk.com", "Admin")}
+                    className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
                   >
                     Admin Panel
                   </button>
@@ -362,23 +404,38 @@ export default function Home() {
               </div>
 
               <div>
-                <label htmlFor="signup-contact" className="block text-sm font-semibold text-neutral-700">
-                  Email or Mobile No
+                <label htmlFor="signup-email" className="block text-sm font-semibold text-neutral-700">
+                  Email Address
                 </label>
                 <input
-                  id="signup-contact"
-                  type="text"
+                  id="signup-email"
+                  type="email"
                   required
-                  value={signUpContact}
-                  onChange={(e) => setSignUpContact(e.target.value)}
-                  placeholder="e.g. peter@avengers.com"
+                  value={signUpEmail}
+                  onChange={(e) => setSignUpEmail(e.target.value)}
+                  placeholder="e.g. peter@brewdesk.com"
+                  className="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="signup-pass" className="block text-sm font-semibold text-neutral-700">
+                  Password
+                </label>
+                <input
+                  id="signup-pass"
+                  type="password"
+                  required
+                  value={signUpPassword}
+                  onChange={(e) => setSignUpPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
                   className="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
                 />
               </div>
 
               <div>
                 <label htmlFor="signup-role" className="block text-sm font-semibold text-neutral-700">
-                  Register As
+                  Register As Role
                 </label>
                 <select
                   id="signup-role"
@@ -393,9 +450,10 @@ export default function Home() {
 
               <button
                 type="submit"
-                className="w-full flex justify-center items-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all mt-4"
+                disabled={isSubmitting}
+                className="w-full flex justify-center items-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all mt-4 disabled:opacity-50"
               >
-                Create Account & Log In
+                {isSubmitting ? "Creating Account..." : "Create Account & Log In"}
               </button>
             </form>
           )}
@@ -407,8 +465,8 @@ export default function Home() {
   // RENDER NON-EMPLOYEE REDIRECTS: If Brewer or Admin landing on Home, display redirection options
   if (currentUser.role !== "Employee") {
     return (
-      <div className="flex-1 flex items-center justify-center p-8 text-center">
-        <div className="max-w-md rounded-2xl border border-neutral-200 bg-white p-8 shadow-md">
+      <div className="flex-grow flex items-center justify-center p-8 text-center">
+        <div className="max-w-md w-full rounded-2xl border border-neutral-200 bg-white p-8 shadow-md">
           <span className="text-5xl select-none">🏢</span>
           <h2 className="text-xl font-bold text-neutral-950 mt-4">Workstation Selection</h2>
           <p className="text-sm text-neutral-500 mt-2">

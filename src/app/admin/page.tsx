@@ -23,6 +23,7 @@ export default function AdminDashboard() {
     systemDate,
     advanceSystemDate,
     currentUser,
+    loading,
   } = useBrew();
 
   // Selected date filter (empty string falls back to systemDate)
@@ -52,6 +53,16 @@ export default function AdminDashboard() {
 
   // Toast for New Day Simulation
   const [showToast, setShowToast] = useState(false);
+
+  // Loading spinner during session checks
+  if (loading) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center min-h-[50vh] p-8">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-800" />
+        <p className="mt-4 text-sm font-semibold text-neutral-500">Checking authorization...</p>
+      </div>
+    );
+  }
 
   // Role Guard: Access allowed only for Admin
   if (!currentUser || currentUser.role !== "Admin") {

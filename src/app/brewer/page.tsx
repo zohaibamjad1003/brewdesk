@@ -4,7 +4,17 @@ import Link from "next/link";
 import { useBrew, Order } from "../../context/BrewContext";
 
 export default function BrewerQueue() {
-  const { orders, updateOrderStatus, currentUser, systemDate } = useBrew();
+  const { orders, updateOrderStatus, currentUser, systemDate, loading } = useBrew();
+
+  // Loading spinner during session checks
+  if (loading) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center min-h-[50vh] p-8">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-800" />
+        <p className="mt-4 text-sm font-semibold text-neutral-500">Checking authorization...</p>
+      </div>
+    );
+  }
 
   // Role Guard: Access allowed only for Brewer and Admin
   if (!currentUser || (currentUser.role !== "Brewer" && currentUser.role !== "Admin")) {

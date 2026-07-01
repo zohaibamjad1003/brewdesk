@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../lib/supabase";
 
 // Define what an Order looks like
 export interface Order {
@@ -20,7 +21,7 @@ export interface EmployeeItem {
   contact: string; // Email or Phone/Contact info
 }
 
-// Define the Brewer (formerly Chai Wala) details
+// Define the Brewer details
 export interface BrewerItem {
   id: string;
   name: string;
@@ -47,10 +48,11 @@ interface BrewContextType {
   employees: EmployeeItem[];
   brewers: BrewerItem[];
   reviews: Review[];
-  currentUser: { name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string } | null;
-  login: (email: string, role: "Employee" | "Brewer" | "Admin") => boolean;
-  signUp: (name: string, contact: string, role: "Employee" | "Brewer") => boolean;
-  logout: () => void;
+  currentUser: { id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string } | null;
+  loading: boolean;
+  login: (email: string, password: string, role: "Employee" | "Brewer" | "Admin") => Promise<{ success: boolean; error?: string }>;
+  signUp: (name: string, email: string, password: string, role: "Employee" | "Brewer") => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   placeOrder: (employeeName: string, floor: string, drink: string, sugar: string) => void;
   updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => void;
   submitReview: (orderId: string, rating: number, comments: string) => void;
@@ -100,13 +102,16 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [reviews, setReviews] = useState<Review[]>([]);
 
-  // Simulated logged-in user state (Starts as null/logged out)
+  // Authenticated user and profile resolution loading states
   const [currentUser, setCurrentUser] = useState<{
+    id: string;
     name: string;
     role: "Employee" | "Brewer" | "Admin";
     contact: string;
     floor?: string;
   } | null>(null);
+  
+  const [loading, setLoading] = useState(true);
 
   // State to hold list of orders
   const [orders, setOrders] = useState<Order[]>([]);
@@ -115,7 +120,6 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const today = new Date(systemDate);
     
-    // Helper to generate a date relative to systemDate
     const getRelativeDateISO = (daysAgo: number, hour: number, minute: number) => {
       const date = new Date(today);
       date.setDate(date.getDate() - daysAgo);
@@ -203,7 +207,6 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     setOrders(initialOrders);
 
-    // Populate dynamic mock reviews
     const initialReviews: Review[] = [
       {
         id: "r1",
@@ -227,79 +230,163 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setReviews(initialReviews);
   }, []);
 
-  // Authentication Handlers
-  const login = (email: string, role: "Employee" | "Brewer" | "Admin"): boolean => {
-    const cleanedEmail = email.trim().toLowerCase();
-    
-    if (role === "Admin") {
-      if (cleanedEmail === "admin@brewdesk.com" || cleanedEmail === "admin") {
-        setCurrentUser({ name: "Sarah Connor", role: "Admin", contact: "admin@brewdesk.com" });
-        return true;
+  // Fetch public user profile matching Auth user ID
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+      
+      if (error) {
+        console.error("Error retrieving profile:", error.message);
+        return null;
       }
-      return false;
+      return data;
+    } catch (err) {
+      console.error("Database query failed:", err);
+      return null;
     }
-
-    if (role === "Employee") {
-      const emp = employees.find(
-        (e) => e.contact.toLowerCase() === cleanedEmail || e.name.toLowerCase() === cleanedEmail
-      );
-      if (emp) {
-        setCurrentUser({ name: emp.name, role: "Employee", contact: emp.contact, floor: "Floor 2" });
-        return true;
-      }
-      return false;
-    }
-
-    if (role === "Brewer") {
-      const bwr = brewers.find(
-        (b) => b.contact.toLowerCase() === cleanedEmail || b.name.toLowerCase() === cleanedEmail
-      );
-      if (bwr) {
-        setCurrentUser({ name: bwr.name, role: "Brewer", contact: bwr.contact });
-        return true;
-      }
-      return false;
-    }
-
-    return false;
   };
 
-  const signUp = (name: string, contact: string, role: "Employee" | "Brewer"): boolean => {
-    const trimmedName = name.trim();
-    const trimmedContact = contact.trim();
-    if (trimmedName === "" || trimmedContact === "") return false;
+  // Auth state event subscription
+  useEffect(() => {
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const profile = await fetchUserProfile(session.user.id);
+          if (profile) {
+            const mappedRole = profile.role === "admin" ? "Admin" : profile.role === "brewer" ? "Brewer" : "Employee";
+            setCurrentUser({
+              id: session.user.id,
+              name: profile.name,
+              role: mappedRole,
+              contact: profile.email || session.user.email || "",
+              floor: profile.role === "employee" ? "Floor 2" : undefined,
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Session lookup error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const cleanedContact = trimmedContact.toLowerCase();
+    getInitialSession();
 
-    if (role === "Employee") {
-      if (employees.some((e) => e.contact.toLowerCase() === cleanedContact)) return false;
-      const newEmp: EmployeeItem = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: trimmedName,
-        contact: trimmedContact,
-      };
-      setEmployees((prev) => [...prev, newEmp]);
-      setCurrentUser({ name: trimmedName, role: "Employee", contact: trimmedContact, floor: "Floor 1" });
-      return true;
+    // Listen to real-time auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setLoading(true);
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        if (profile) {
+          const mappedRole = profile.role === "admin" ? "Admin" : profile.role === "brewer" ? "Brewer" : "Employee";
+          setCurrentUser({
+            id: session.user.id,
+            name: profile.name,
+            role: mappedRole,
+            contact: profile.email || session.user.email || "",
+            floor: profile.role === "employee" ? "Floor 2" : undefined,
+          });
+        } else {
+          setCurrentUser(null);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Async Login with Role validation
+  const login = async (email: string, password: string, role: "Employee" | "Brewer" | "Admin"): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password,
+      });
+
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        const profile = await fetchUserProfile(data.user.id);
+        if (profile) {
+          const dbRole = profile.role; // 'employee' | 'brewer' | 'admin'
+          const requestedDbRole = role === "Admin" ? "admin" : role === "Brewer" ? "brewer" : "employee";
+
+          if (dbRole !== requestedDbRole) {
+            // Sign out immediately due to credentials/role mismatch
+            await supabase.auth.signOut();
+            setLoading(false);
+            return { 
+              success: false, 
+              error: `Role Mismatch. This account is registered as a '${dbRole}', not '${requestedDbRole}'.` 
+            };
+          }
+        }
+      }
+
+      setLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setLoading(false);
+      return { success: false, error: err.message || "An unexpected error occurred." };
     }
-
-    if (role === "Brewer") {
-      if (brewers.some((b) => b.contact.toLowerCase() === cleanedContact)) return false;
-      const newBwr: BrewerItem = {
-        id: Math.random().toString(36).substring(2, 9),
-        name: trimmedName,
-        contact: trimmedContact,
-      };
-      setBrewers((prev) => [...prev, newBwr]);
-      setCurrentUser({ name: trimmedName, role: "Brewer", contact: trimmedContact });
-      return true;
-    }
-
-    return false;
   };
 
-  const logout = () => {
+  // Async Sign Up (Automatically creates profile entry via trigger)
+  const signUp = async (name: string, email: string, password: string, role: "Employee" | "Brewer"): Promise<{ success: boolean; error?: string }> => {
+    try {
+      setLoading(true);
+      const dbRole = role === "Employee" ? "employee" : "brewer";
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: password,
+        options: {
+          data: {
+            name: name.trim(),
+            role: dbRole,
+          },
+        },
+      });
+
+      if (error) {
+        setLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      // If email confirmation is enabled, session will be null on signup
+      if (!data.session) {
+        setLoading(false);
+        return { success: true, error: "Signup successful! Please check your email inbox to confirm your account." };
+      }
+
+      setLoading(false);
+      return { success: true };
+    } catch (err: any) {
+      setLoading(false);
+      return { success: false, error: err.message || "An unexpected error occurred." };
+    }
+  };
+
+  // Async Logout
+  const logout = async () => {
+    setLoading(true);
+    await supabase.auth.signOut();
     setCurrentUser(null);
+    setLoading(false);
   };
 
   // Function to place a new order
@@ -437,6 +524,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         brewers,
         reviews,
         currentUser,
+        loading,
         login,
         signUp,
         logout,
