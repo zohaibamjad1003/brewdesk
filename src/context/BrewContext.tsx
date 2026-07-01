@@ -49,7 +49,7 @@ interface BrewContextType {
   employees: EmployeeItem[];
   brewers: BrewerItem[];
   reviews: Review[];
-  currentUser: { id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string } | null;
+  currentUser: { id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null;
   loading: boolean;
   login: (email: string, password: string, role: "Employee" | "Brewer" | "Admin") => Promise<{ success: boolean; error?: string }>;
   signUp: (name: string, email: string, password: string, role: "Employee" | "Brewer") => Promise<{ success: boolean; error?: string }>;
@@ -99,13 +99,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [reviews, setReviews] = useState<Review[]>([]);
 
   // Authenticated user and profile resolution loading states
-  const [currentUser, setCurrentUser] = useState<{
-    id: string;
-    name: string;
-    role: "Employee" | "Brewer" | "Admin";
-    contact: string;
-    floor?: string;
-  } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null>(null);
   
   const [loading, setLoading] = useState(true);
 
@@ -260,6 +254,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
             role: mappedRole,
             contact: profile?.email || session.user.email || "",
             floor: roleStr === "employee" ? "Floor 2" : undefined,
+            status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
           });
         }
       } catch (err) {
@@ -287,6 +282,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
           role: mappedRole,
           contact: profile?.email || session.user.email || "",
           floor: roleStr === "employee" ? "Floor 2" : undefined,
+          status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
         });
       } else {
         setCurrentUser(null);
@@ -518,6 +514,9 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Admin / Brewer: Update Brewer Status
   const updateBrewerStatus = async (id: string, status: "Active" | "On Break" | "Off") => {
     try {
+      // Optimistically update local session state if this is the active user
+      setCurrentUser((prev) => prev && prev.id === id ? { ...prev, status } : prev);
+
       const { error } = await supabase
         .from("profiles")
         .update({ status })
