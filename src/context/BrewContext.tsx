@@ -26,6 +26,7 @@ export interface BrewerItem {
   id: string;
   name: string;
   contact: string; // Email or Phone/Contact info
+  status: "Active" | "On Break" | "Absent";
 }
 
 // Define the Order Review details
@@ -65,6 +66,7 @@ interface BrewContextType {
   addBrewer: (name: string, contact: string) => void;
   deleteBrewer: (id: string) => void;
   updateBrewer: (id: string, name: string, contact: string) => void;
+  updateBrewerStatus: (id: string, status: "Active" | "On Break" | "Absent") => void;
   systemDate: string; // YYYY-MM-DD
   advanceSystemDate: () => void;
 }
@@ -97,8 +99,8 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   ]);
 
   const [brewers, setBrewers] = useState<BrewerItem[]>([
-    { id: "d1", name: "Raju Dev", contact: "raju@brewdesk.com" },
-    { id: "d2", name: "Suresh Kumar", contact: "suresh@brewdesk.com" },
+    { id: "d1", name: "Raju Dev", contact: "raju@brewdesk.com", status: "Active" },
+    { id: "d2", name: "Suresh Kumar", contact: "suresh@brewdesk.com", status: "On Break" },
   ]);
 
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -493,6 +495,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: Math.random().toString(36).substring(2, 9),
         name: trimmedName,
         contact: trimmedContact || "N/A",
+        status: "Active",
       };
       setBrewers((prev) => [...prev, newStaff]);
     }
@@ -512,6 +515,13 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prev.map((b) => (b.id === id ? { ...b, name: trimmedName, contact: trimmedContact || "N/A" } : b))
       );
     }
+  };
+
+  // Admin / Brewer: Update Brewer Status
+  const updateBrewerStatus = (id: string, status: "Active" | "On Break" | "Absent") => {
+    setBrewers((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, status } : b))
+    );
   };
 
   // Admin: Simulate Next Day
@@ -550,6 +560,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addBrewer,
         deleteBrewer,
         updateBrewer,
+        updateBrewerStatus,
         systemDate,
         advanceSystemDate,
       }}

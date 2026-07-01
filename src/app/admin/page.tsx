@@ -21,6 +21,7 @@ export default function AdminDashboard() {
     addBrewer,
     deleteBrewer,
     updateBrewer,
+    updateBrewerStatus,
     systemDate,
     advanceSystemDate,
     currentUser,
@@ -55,6 +56,12 @@ export default function AdminDashboard() {
   const [editingBrewerId, setEditingBrewerId] = useState<string | null>(null);
   const [editingBrewerName, setEditingBrewerName] = useState("");
   const [editingBrewerContact, setEditingBrewerContact] = useState("");
+  const [editingBrewerStatus, setEditingBrewerStatus] = useState<"Active" | "On Break" | "Absent">("Active");
+
+  // Sorting options
+  const [floorSortOrder, setFloorSortOrder] = useState<"default" | "alpha">("default");
+  const [employeeSortOrder, setEmployeeSortOrder] = useState<"default" | "alpha">("default");
+  const [brewerSortOrder, setBrewerSortOrder] = useState<"default" | "alpha">("default");
 
   // Toast for New Day Simulation
   const [showToast, setShowToast] = useState(false);
@@ -193,6 +200,19 @@ export default function AdminDashboard() {
     setEditingFloorName(null);
   };
 
+  // List sorting logic
+  const sortedFloors = floorSortOrder === "alpha" 
+    ? [...floors].sort((a, b) => a.localeCompare(b))
+    : floors;
+
+  const sortedEmployees = employeeSortOrder === "alpha"
+    ? [...employees].sort((a, b) => a.name.localeCompare(b.name))
+    : employees;
+
+  const sortedBrewers = brewerSortOrder === "alpha"
+    ? [...brewers].sort((a, b) => a.name.localeCompare(b.name))
+    : brewers;
+
   // Inline Edit Handlers for Employee
   const handleEditEmployeeStart = (emp: { id: string; name: string; contact: string }) => {
     setEditingEmployeeId(emp.id);
@@ -207,15 +227,17 @@ export default function AdminDashboard() {
   };
 
   // Inline Edit Handlers for Brewer
-  const handleEditBrewerStart = (bwr: { id: string; name: string; contact: string }) => {
+  const handleEditBrewerStart = (bwr: { id: string; name: string; contact: string; status: "Active" | "On Break" | "Absent" }) => {
     setEditingBrewerId(bwr.id);
     setEditingBrewerName(bwr.name);
     setEditingBrewerContact(bwr.contact);
+    setEditingBrewerStatus(bwr.status);
   };
 
   const handleEditBrewerSave = (id: string) => {
     if (editingBrewerName.trim() === "") return;
     updateBrewer(id, editingBrewerName, editingBrewerContact);
+    updateBrewerStatus(id, editingBrewerStatus);
     setEditingBrewerId(null);
   };
 
@@ -444,7 +466,17 @@ export default function AdminDashboard() {
         {/* Floor Management */}
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-neutral-900 mb-3.5">Manage Office Floors</h3>
+            <div className="flex items-center justify-between mb-3.5">
+              <h3 className="text-base font-bold text-neutral-900">Manage Office Floors</h3>
+              <select
+                value={floorSortOrder}
+                onChange={(e) => setFloorSortOrder(e.target.value as any)}
+                className="text-xs border border-neutral-300 rounded px-1.5 py-0.5 bg-white text-neutral-600 outline-none"
+              >
+                <option value="default">Default</option>
+                <option value="alpha">A-Z</option>
+              </select>
+            </div>
             
             <form onSubmit={handleAddFloorSubmit} className="flex gap-2 mb-4">
               <input
@@ -463,7 +495,7 @@ export default function AdminDashboard() {
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
-              {floors.map((floor) => {
+              {sortedFloors.map((floor) => {
                 const isEditing = editingFloorName === floor;
                 return (
                   <li key={floor} className="py-2 text-sm">
@@ -524,7 +556,17 @@ export default function AdminDashboard() {
         {/* Employee Management */}
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-neutral-900 mb-3.5">Manage Employee List</h3>
+            <div className="flex items-center justify-between mb-3.5">
+              <h3 className="text-base font-bold text-neutral-900">Manage Employee List</h3>
+              <select
+                value={employeeSortOrder}
+                onChange={(e) => setEmployeeSortOrder(e.target.value as any)}
+                className="text-xs border border-neutral-300 rounded px-1.5 py-0.5 bg-white text-neutral-600 outline-none"
+              >
+                <option value="default">Default</option>
+                <option value="alpha">A-Z</option>
+              </select>
+            </div>
 
             <form onSubmit={handleAddEmployeeSubmit} className="space-y-2 mb-4">
               <input
@@ -553,7 +595,7 @@ export default function AdminDashboard() {
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
-              {employees.map((emp) => {
+              {sortedEmployees.map((emp) => {
                 const isEditing = editingEmployeeId === emp.id;
                 return (
                   <li key={emp.id} className="py-2.5 text-sm">
@@ -631,7 +673,17 @@ export default function AdminDashboard() {
         {/* Brewer (Delivery) Management */}
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
           <div>
-            <h3 className="text-base font-bold text-neutral-900 mb-3.5">Manage Brewers</h3>
+            <div className="flex items-center justify-between mb-3.5">
+              <h3 className="text-base font-bold text-neutral-900">Manage Brewers</h3>
+              <select
+                value={brewerSortOrder}
+                onChange={(e) => setBrewerSortOrder(e.target.value as any)}
+                className="text-xs border border-neutral-300 rounded px-1.5 py-0.5 bg-white text-neutral-600 outline-none"
+              >
+                <option value="default">Default</option>
+                <option value="alpha">A-Z</option>
+              </select>
+            </div>
 
             <form onSubmit={handleAddBrewerSubmit} className="space-y-2 mb-4">
               <input
@@ -660,8 +712,14 @@ export default function AdminDashboard() {
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
-              {brewers.map((bwr) => {
+              {sortedBrewers.map((bwr) => {
                 const isEditing = editingBrewerId === bwr.id;
+                
+                let badgeClass = "";
+                if (bwr.status === "Active") badgeClass = "bg-emerald-50 text-emerald-700 ring-emerald-600/10";
+                if (bwr.status === "On Break") badgeClass = "bg-amber-50 text-amber-700 ring-amber-600/10";
+                if (bwr.status === "Absent") badgeClass = "bg-red-50 text-red-700 ring-red-600/10";
+
                 return (
                   <li key={bwr.id} className="py-2.5 text-sm">
                     {isEditing ? (
@@ -685,6 +743,18 @@ export default function AdminDashboard() {
                             className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
                           />
                         </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-neutral-500 uppercase">Status Availability</label>
+                          <select
+                            value={editingBrewerStatus}
+                            onChange={(e) => setEditingBrewerStatus(e.target.value as any)}
+                            className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none bg-white"
+                          >
+                            <option value="Active">🟢 Active</option>
+                            <option value="On Break">🟡 On Break</option>
+                            <option value="Absent">🔴 Absent</option>
+                          </select>
+                        </div>
                         <div className="flex gap-1.5 justify-end">
                           <button
                             type="button"
@@ -705,7 +775,12 @@ export default function AdminDashboard() {
                     ) : (
                       <div className="flex items-center justify-between">
                         <div className="flex flex-col min-w-0 pr-2">
-                          <span className="font-semibold text-neutral-800 truncate">{bwr.name}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-semibold text-neutral-800 truncate">{bwr.name}</span>
+                            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold ring-1 ring-inset ${badgeClass}`}>
+                              {bwr.status}
+                            </span>
+                          </div>
                           <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={bwr.contact}>
                             {bwr.contact}
                           </span>

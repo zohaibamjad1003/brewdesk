@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useBrew, Order } from "../../context/BrewContext";
 
 export default function BrewerQueue() {
-  const { orders, updateOrderStatus, currentUser, systemDate, loading } = useBrew();
+  const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus } = useBrew();
+  const currentBrewer = brewers.find((b) => b.name === currentUser?.name);
 
   // Loading spinner during session checks
   if (loading) {
@@ -91,6 +92,36 @@ export default function BrewerQueue() {
           </div>
         </div>
       </div>
+
+      {/* Brewer Status working board */}
+      {currentBrewer && (
+        <div className="mb-6 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 select-none">
+          <div>
+            <h2 className="text-base font-bold text-neutral-900">Availability Status Dashboard</h2>
+            <p className="text-xs text-neutral-500 mt-0.5">Employees and Admins will see your active status in real-time.</p>
+          </div>
+          <div className="flex gap-2">
+            {(["Active", "On Break", "Absent"] as const).map((st) => {
+              const isSelected = currentBrewer.status === st;
+              let colorClass = "";
+              if (st === "Active") colorClass = isSelected ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "text-emerald-700 bg-emerald-50 border-emerald-200 hover:bg-emerald-100";
+              if (st === "On Break") colorClass = isSelected ? "bg-amber-600 text-white border-amber-600 hover:bg-amber-700" : "text-amber-700 bg-amber-50 border-amber-200 hover:bg-amber-100";
+              if (st === "Absent") colorClass = isSelected ? "bg-red-600 text-white border-red-600 hover:bg-red-700" : "text-red-700 bg-red-50 border-red-200 hover:bg-red-100";
+
+              return (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => updateBrewerStatus(currentBrewer.id, st)}
+                  className={`rounded-lg border px-4 py-2 text-xs font-bold transition-all shadow-sm ${colorClass}`}
+                >
+                  {st === "Active" ? "🟢 Active" : st === "On Break" ? "🟡 On Break" : "🔴 Absent"}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* FIFO Active Queue (Left Side) */}

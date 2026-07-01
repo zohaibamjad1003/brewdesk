@@ -20,6 +20,7 @@ export default function Home() {
     reviews,
     submitReview,
     systemDate,
+    brewers,
   } = useBrew();
 
   // Automatic client-side redirect based on user role
@@ -727,8 +728,30 @@ export default function Home() {
         </div>
 
         {/* Live Order Tracker (Right Side) */}
-        <div>
-          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm h-full flex flex-col">
+        <div className="space-y-6">
+          {/* Brewer Status Board */}
+          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-neutral-900 mb-4">Brewers Board</h2>
+            <div className="space-y-3">
+              {brewers.map((bwr) => {
+                let badgeClass = "";
+                if (bwr.status === "Active") badgeClass = "bg-emerald-50 text-emerald-800 ring-emerald-600/20";
+                if (bwr.status === "On Break") badgeClass = "bg-amber-50 text-amber-800 ring-amber-600/20";
+                if (bwr.status === "Absent") badgeClass = "bg-red-50 text-red-800 ring-red-600/20";
+
+                return (
+                  <div key={bwr.id} className="flex items-center justify-between text-sm py-2 border-b last:border-0 border-neutral-100">
+                    <span className="font-semibold text-neutral-800">{bwr.name}</span>
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ring-1 ring-inset ${badgeClass}`}>
+                      {bwr.status === "Active" ? "🟢 Active" : bwr.status === "On Break" ? "🟡 On Break" : "🔴 Absent"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm flex flex-col">
             <h2 className="text-lg font-bold text-neutral-900 mb-4 flex items-center justify-between">
               <span>My Recent Orders</span>
               <span className="rounded bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-600">
