@@ -1,11 +1,73 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useBrew, Order } from "../../context/BrewContext";
 
 export default function BrewerQueue() {
   const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus } = useBrew();
   const currentBrewer = brewers.find((b) => b.name === currentUser?.name);
+
+  const [newOrderAlert, setNewOrderAlert] = useState(false);
+  const prevPendingCount = useRef<number | null>(null);
+
+  // Synthesize a beautiful notification chime using the Web Audio API
+  const playNotificationSound = () => {
+    try {
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) return;
+      const ctx = new AudioContextClass();
+      
+      // Tone 1: C5
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+      gain1.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      
+      osc1.connect(gain1);
+      gain1.connect(ctx.destination);
+      osc1.start();
+      osc1.stop(ctx.currentTime + 0.4);
+      
+      // Tone 2: E5 (delayed by 120ms)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(659.25, ctx.currentTime + 0.12);
+      gain2.gain.setValueAtTime(0.12, ctx.currentTime + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.52);
+      
+      osc2.connect(gain2);
+      gain2.connect(ctx.destination);
+      osc2.start(ctx.currentTime + 0.12);
+      osc2.stop(ctx.currentTime + 0.52);
+    } catch (e) {
+      console.warn("Web Audio blocked or uninitialized:", e);
+    }
+  };
+
+  // Filter active pending orders matching current day
+  const activePendingOrdersCount = orders.filter(
+    (order) => order.status === "Pending" && order.createdAt.startsWith(systemDate)
+  ).length;
+
+  useEffect(() => {
+    if (loading) return;
+
+    if (prevPendingCount.current === null) {
+      prevPendingCount.current = activePendingOrdersCount;
+      return;
+    }
+
+    if (activePendingOrdersCount > prevPendingCount.current) {
+      playNotificationSound();
+      setNewOrderAlert(true);
+    }
+
+    prevPendingCount.current = activePendingOrdersCount;
+  }, [activePendingOrdersCount, loading]);
 
   // Loading spinner during session checks
   if (loading) {
@@ -92,6 +154,26 @@ export default function BrewerQueue() {
           </div>
         </div>
       </div>
+
+      {/* Visual & Sound Notification Alert Banner */}
+      {newOrderAlert && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-md flex items-center justify-between animate-bounce">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl animate-pulse">🔔</span>
+            <div>
+              <p className="text-sm font-bold text-amber-950">New Order Placed!</p>
+              <p className="text-xs text-amber-700 mt-0.5">A new beverage request has been added to the queue.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setNewOrderAlert(false)}
+            className="text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-1 rounded-lg transition-all"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Brewer Status working board */}
       {currentBrewer && (
