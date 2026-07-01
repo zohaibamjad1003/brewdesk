@@ -79,12 +79,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Keep systemDate dynamically resolved to today's UTC-synced calendar date (YYYY-MM-DD)
   const systemDate = new Date().toISOString().split("T")[0];
 
-  const [floors, setFloors] = useState<string[]>([
-    "Ground Floor",
-    "Floor 1",
-    "Floor 2",
-    "Floor 3",
-  ]);
+  const [floors, setFloors] = useState<string[]>([]);
 
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
 
@@ -200,11 +195,33 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Fetch floors from database
+  const fetchFloors = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("floors")
+        .select("name")
+        .order("name", { ascending: true });
+
+      if (error) {
+        console.error("Error fetching floors:", error.message);
+        return;
+      }
+      if (data) {
+        setFloors(data.map((f: any) => f.name));
+      }
+    } catch (err) {
+      console.error("Floors fetching exception:", err);
+    }
+  };
+
+
   // Fetch initial database items and listen to real-time updates
   useEffect(() => {
     fetchOrders();
     fetchBrewersList();
     fetchEmployeesList();
+    fetchFloors();
 
     const ordersChannel = supabase
       .channel("realtime-orders")
@@ -229,9 +246,21 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe();
 
+    const floorsChannel = supabase
+      .channel("realtime-floors")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "floors" },
+        () => {
+          fetchFloors();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(profilesChannel);
+      supabase.removeChannel(floorsChannel);
     };
   }, []);
 
@@ -450,22 +479,50 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Admin: Add Floor
-  const addFloor = (floorName: string) => {
-    if (!floors.includes(floorName) && floorName.trim() !== "") {
-      setFloors((prev) => [...prev, floorName.trim()]);
+  const addFloor = async (floorName: string) => {
+    const name = floorName.trim();
+    if (name === "") return;
+    try {
+      const { error } = await supabase
+        .from("floors")
+        .insert({ name });
+      if (error) {
+        console.error("Error adding floor:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception adding floor:", err);
     }
   };
 
   // Admin: Delete Floor
-  const deleteFloor = (floorName: string) => {
-    setFloors((prev) => prev.filter((f) => f !== floorName));
+  const deleteFloor = async (floorName: string) => {
+    try {
+      const { error } = await supabase
+        .from("floors")
+        .delete()
+        .eq("name", floorName);
+      if (error) {
+        console.error("Error deleting floor:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception deleting floor:", err);
+    }
   };
 
   // Admin: Update Floor
-  const updateFloor = (oldFloorName: string, newFloorName: string) => {
-    const trimmedNew = newFloorName.trim();
-    if (trimmedNew !== "" && !floors.includes(trimmedNew)) {
-      setFloors((prev) => prev.map((f) => (f === oldFloorName ? trimmedNew : f)));
+  const updateFloor = async (oldFloorName: string, newFloorName: string) => {
+    const name = newFloorName.trim();
+    if (name === "") return;
+    try {
+      const { error } = await supabase
+        .from("floors")
+        .update({ name })
+        .eq("name", oldFloorName);
+      if (error) {
+        console.error("Error updating floor:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating floor:", err);
     }
   };
 
