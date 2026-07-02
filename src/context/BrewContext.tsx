@@ -6,6 +6,7 @@ import { supabase } from "../lib/supabase";
 // Define what an Order looks like
 export interface Order {
   id: string;
+  employeeId: string;
   employeeName: string;
   floor: string;
   drink: string;
@@ -135,6 +136,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const mappedOrders = data.map((o: any) => ({
         id: o.id,
+        employeeId: o.employee_id,
         employeeName: o.custom_name || o.profiles?.name || "Anonymous Employee",
         floor: o.floor_name,
         drink: o.drink_name,

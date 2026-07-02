@@ -282,18 +282,29 @@ export default function Home() {
     return () => clearTimeout(timer);
   };
 
+  // Find any unreviewed delivered orders placed by the current user
+  const unreviewedOrder = currentUser
+    ? orders.find(
+        (o) =>
+          o.employeeId === currentUser.id &&
+          o.status === "Delivered" &&
+          (o.feedbackRating === undefined || o.feedbackRating === null)
+      )
+    : undefined;
+
   // Handle Review submission
   const handleReviewSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!reviewOrderId) return;
+    const targetId = reviewOrderId || (unreviewedOrder ? unreviewedOrder.id : null);
+    if (!targetId) return;
 
-    submitReview(reviewOrderId, reviewRating, reviewComments);
+    submitReview(targetId, reviewRating, reviewComments);
 
     setReviewOrderId(null);
     setReviewRating(5);
     setReviewComments("");
 
-    setNotificationMsg("Thank you for your feedback!");
+    setNotificationMsg("Thank you for confirming delivery!");
     setShowNotification(true);
     setTimeout(() => {
       setShowNotification(false);
@@ -754,75 +765,7 @@ export default function Home() {
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Order Form Card */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Review Input Box (Shows only when reviewOrderId is set) */}
-          {reviewOrderId && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/50 p-6 shadow-sm">
-              <h3 className="text-base font-bold text-amber-950 flex items-center gap-2">
-                <span>⭐ Leave Feedback for Delivered Order</span>
-              </h3>
-              <p className="text-xs text-neutral-500 mt-1">
-                Tell us how your beverage was and what improvements we can make.
-              </p>
-
-              <form onSubmit={handleReviewSubmit} className="mt-4 space-y-4">
-                {/* 5-Star Selector */}
-                <div>
-                  <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-1.5">
-                    Rating:
-                  </label>
-                  <div className="flex gap-2 text-2xl">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        type="button"
-                        key={star}
-                        onClick={() => setReviewRating(star)}
-                        className={`transition-all hover:scale-110 ${
-                          star <= reviewRating ? "opacity-100" : "opacity-35"
-                        }`}
-                      >
-                        ⭐
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Feedback Comment */}
-                <div>
-                  <label htmlFor="comments-input" className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                    Improvements / Comments
-                  </label>
-                  <textarea
-                    id="comments-input"
-                    rows={3}
-                    required
-                    value={reviewComments}
-                    onChange={(e) => setReviewComments(e.target.value)}
-                    placeholder="e.g. Tea was perfect! Or maybe add more sugar options next time..."
-                    className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
-                  />
-                </div>
-
-                <div className="flex gap-2 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReviewOrderId(null);
-                      setReviewComments("");
-                    }}
-                    className="px-3.5 py-1.5 rounded-lg border border-neutral-300 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-1.5 rounded-lg bg-neutral-950 text-xs font-bold text-white hover:bg-neutral-800 shadow"
-                  >
-                    Submit Review
-                  </button>
-                </div>
-              </form>
-            </div>
-          )}
+          {/* Review form is now handled globally via full-screen mandatory confirmation modal */}
 
           {/* Beverage request form */}
           <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
@@ -1046,6 +989,87 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Mandatory Review Modal Overlay */}
+      {(unreviewedOrder || reviewOrderId) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl animate-fade-in-up">
+            <div className="text-center">
+              <span className="text-5xl select-none">🎉</span>
+              <h3 className="text-xl font-bold text-neutral-950 mt-4">
+                {unreviewedOrder ? "Confirm Delivery & Rate" : "Leave Feedback for Order"}
+              </h3>
+              <p className="text-xs text-neutral-500 mt-1.5">
+                {unreviewedOrder 
+                  ? `Your order of ${unreviewedOrder.drink} (${unreviewedOrder.sugar}) has been delivered! Please rate it to confirm delivery.`
+                  : "Tell us how your beverage was and what improvements we can make."
+                }
+              </p>
+            </div>
+
+            <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4 text-left">
+              {/* 5-Star Selector */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                  Rating (Stars):
+                </label>
+                <div className="flex justify-center gap-3 text-3xl">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      type="button"
+                      key={star}
+                      onClick={() => setReviewRating(star)}
+                      className={`transition-all hover:scale-125 cursor-pointer ${
+                        star <= reviewRating ? "opacity-100 transform scale-110" : "opacity-30"
+                      }`}
+                    >
+                      ⭐
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Feedback Comment */}
+              <div>
+                <label htmlFor="modal-comments" className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                  Review comments / suggestions:
+                </label>
+                <textarea
+                  id="modal-comments"
+                  rows={3}
+                  required
+                  value={reviewComments}
+                  onChange={(e) => setReviewComments(e.target.value)}
+                  placeholder="e.g. Perfectly brewed! Thank you!"
+                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end mt-6">
+                {/* Only show Cancel button if this is NOT a mandatory unreviewedOrder popup */}
+                {!unreviewedOrder && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setReviewOrderId(null);
+                      setReviewComments("");
+                    }}
+                    className="px-4 py-2 rounded-lg border border-neutral-300 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white shadow transition-all cursor-pointer flex-grow text-center"
+                >
+                  Confirm & Submit Review ✓
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
