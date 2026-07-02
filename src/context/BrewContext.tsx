@@ -486,6 +486,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const placeOrder = async (employeeName: string, floor: string, drink: string, sugar: string) => {
     if (!currentUser) return;
     try {
+      // 1. Try to insert with custom_name
       const { error } = await supabase.from("orders").insert({
         employee_id: currentUser.id,
         floor_name: floor,
@@ -494,11 +495,30 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: "Pending",
         custom_name: employeeName,
       });
+
       if (error) {
-        console.error("Error inserting order:", error.message);
+        // If the custom_name column does not exist in the database, fall back
+        if (error.message.includes("custom_name") || error.code === "PGRST204" || error.code === "42703") {
+          console.warn("custom_name column missing in Supabase orders table. Falling back to default insert.");
+          const { error: fallbackError } = await supabase.from("orders").insert({
+            employee_id: currentUser.id,
+            floor_name: floor,
+            drink_name: drink,
+            sugar: sugar,
+            status: "Pending",
+          });
+          if (fallbackError) {
+            console.error("Fallback insert error:", fallbackError.message);
+            alert("Error placing order: " + fallbackError.message);
+          }
+        } else {
+          console.error("Error inserting order:", error.message);
+          alert("Error placing order: " + error.message);
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Exception placing order:", err);
+      alert("Error placing order: " + (err.message || err));
     }
   };
 
