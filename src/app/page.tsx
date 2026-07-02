@@ -671,8 +671,8 @@ export default function Home() {
     );
   }
 
-  // RENDER NON-EMPLOYEE REDIRECTS: If Brewer or Admin landing on Home, display redirection options
-  if (currentUser.role !== "Employee") {
+  // RENDER REDIRECTS: If Brewer landing on Home, display redirection options
+  if (currentUser.role === "Brewer") {
     return (
       <div className="flex-grow flex items-center justify-center p-8 text-center">
         <div className="max-w-md w-full rounded-2xl border border-neutral-200 bg-white p-8 shadow-md">
@@ -682,30 +682,12 @@ export default function Home() {
             You are logged in as <span className="font-semibold text-neutral-800">{currentUser.name}</span> ({currentUser.role}).
           </p>
           <div className="mt-6 flex flex-col gap-3">
-            {currentUser.role === "Brewer" && (
-              <Link
-                href="/brewer"
-                className="w-full inline-flex justify-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all"
-              >
-                Go to Brewer Workstation 🚲
-              </Link>
-            )}
-            {currentUser.role === "Admin" && (
-              <>
-                <Link
-                  href="/brewer"
-                  className="w-full inline-flex justify-center rounded-lg bg-neutral-100 hover:bg-neutral-200 px-4 py-2.5 text-sm font-bold text-neutral-800 transition-all"
-                >
-                  View Brewer Queue 🚲
-                </Link>
-                <Link
-                  href="/admin"
-                  className="w-full inline-flex justify-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all"
-                >
-                  View Admin Dashboard 📊
-                </Link>
-              </>
-            )}
+            <Link
+              href="/brewer"
+              className="w-full inline-flex justify-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all"
+            >
+              Go to Brewer Workstation 🚲
+            </Link>
           </div>
         </div>
       </div>
