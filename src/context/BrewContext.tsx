@@ -148,10 +148,10 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         floor: o.floor_name,
         drink: o.drink_name,
         sugar: o.sugar,
-        status: o.status,
+        status: o.status === "Delivered" && o.feedback_comments === "__NOT_FOUND__" ? ("Not Found" as const) : o.status,
         createdAt: o.created_at,
-        feedbackRating: o.feedback_rating,
-        feedbackComments: o.feedback_comments,
+        feedbackRating: o.feedback_comments === "__NOT_FOUND__" ? null : o.feedback_rating,
+        feedbackComments: o.feedback_comments === "__NOT_FOUND__" ? null : o.feedback_comments,
       }));
       setOrders(mappedOrders);
 
@@ -606,9 +606,17 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Function to update an existing order's status
   const updateOrderStatus = async (id: string, newStatus: "Pending" | "On the way" | "Delivered" | "Not Found") => {
     try {
+      let updatePayload: any = { status: newStatus };
+      if (newStatus === "Not Found") {
+        updatePayload = {
+          status: "Delivered",
+          feedback_comments: "__NOT_FOUND__"
+        };
+      }
+
       const { error } = await supabase
         .from("orders")
-        .update({ status: newStatus })
+        .update(updatePayload)
         .eq("id", id);
       if (error) {
         console.error("Error updating status:", error.message);
