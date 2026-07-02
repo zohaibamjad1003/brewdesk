@@ -862,15 +862,13 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const { error } = await supabase
         .from("settings")
-        .update({ value: valStr })
-        .eq("key", "cooldown_limit_enabled");
+        .upsert({ key: "cooldown_limit_enabled", value: valStr });
 
       if (error) {
-        // Fallback update to start_time column
+        // Fallback upsert to start_time column
         const { error: fallbackError } = await supabase
           .from("settings")
-          .update({ start_time: valStr })
-          .eq("key", "cooldown_limit_enabled");
+          .upsert({ key: "cooldown_limit_enabled", start_time: valStr });
         if (fallbackError) {
           console.error("Error toggling cooldown limit fallback:", fallbackError.message);
         }

@@ -415,6 +415,16 @@ export default function Home() {
     }
   };
 
+  const formatCooldown = (mins: number) => {
+    if (mins <= 0) return "";
+    const hrs = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    if (hrs > 0) {
+      return `${hrs} hour${hrs > 1 ? "s" : ""}${remainingMins > 0 ? ` and ${remainingMins} minute${remainingMins !== 1 ? "s" : ""}` : ""}`;
+    }
+    return `${remainingMins} minute${remainingMins !== 1 ? "s" : ""}`;
+  };
+
   // Helper to fill pre-defined credentials for development bypasses
   const applyBypass = (email: string, role: "Employee" | "Brewer" | "Admin") => {
     setAuthEmail(email);
@@ -953,8 +963,8 @@ export default function Home() {
                   ⏳ Active Order In Progress: You can order again once your current beverage is delivered.
                 </div>
               ) : currentUser.role !== "Admin" && cooldownRemaining > 0 ? (
-                <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3.5 text-xs font-semibold text-neutral-500 text-center select-none shadow-sm">
-                  ☕ 3-Hour Cooldown: Please wait {cooldownRemaining} minutes before placing your next order.
+                <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3.5 text-xs font-semibold text-neutral-550 text-center select-none shadow-sm">
+                  ☕ 3-Hour Cooldown: Please wait {formatCooldown(cooldownRemaining)} before placing your next order.
                 </div>
               ) : (
                 <button
