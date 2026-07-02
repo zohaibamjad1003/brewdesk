@@ -323,7 +323,7 @@ export default function AdminDashboard() {
       case "Delivered":
         return "text-emerald-700 bg-emerald-50 ring-emerald-600/20";
       case "Not Found":
-        return "text-red-700 bg-red-50 ring-red-650/20";
+        return "text-red-800 bg-red-50 ring-red-200";
     }
   };
 
@@ -440,8 +440,8 @@ export default function AdminDashboard() {
           <p className="text-3xl font-extrabold text-emerald-600 mt-1">{deliveredOrders}</p>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-          <span className="text-sm font-medium text-red-650">Not Found ❌</span>
-          <p className="text-3xl font-extrabold text-red-650 mt-1">{notFoundOrders}</p>
+          <span className="text-sm font-medium text-red-800">Not Found ❌</span>
+          <p className="text-3xl font-extrabold text-red-800 mt-1">{notFoundOrders}</p>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm col-span-2 sm:col-span-1">
           <span className="text-sm font-medium text-purple-600">Avg Satisfaction</span>
