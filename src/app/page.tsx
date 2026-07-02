@@ -1138,79 +1138,102 @@ export default function Home() {
       {(unreviewedOrder || reviewOrderId) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
           <div className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl animate-fade-in-up">
-            <div className="text-center">
-              <span className="text-5xl select-none">🎉</span>
-              <h3 className="text-xl font-bold text-neutral-950 mt-4">
-                {unreviewedOrder ? "Confirm Delivery & Rate" : "Leave Feedback for Order"}
-              </h3>
-              <p className="text-xs text-neutral-500 mt-1.5">
-                {unreviewedOrder 
-                  ? `Your order of ${unreviewedOrder.drink} (${unreviewedOrder.sugar}) has been delivered! Please rate it to confirm delivery.`
-                  : "Tell us how your beverage was and what improvements we can make."
-                }
-              </p>
-            </div>
+            {(() => {
+              const activeOrderForRating = unreviewedOrder || (reviewOrderId ? orders.find((o) => o.id === reviewOrderId) : null);
+              const dailyNum = activeOrderForRating ? getDailyOrderNumber(activeOrderForRating.id, activeOrderForRating.createdAt) : "";
+              const reactions = [
+                { value: 1, emoji: "😞", label: "Poor" },
+                { value: 2, emoji: "😐", label: "OK" },
+                { value: 3, emoji: "🙂", label: "Good" },
+                { value: 4, emoji: "😋", label: "Delicious" },
+                { value: 5, emoji: "🤩", label: "Amazing!" }
+              ];
+              return (
+                <>
+                  <div className="text-center">
+                    <span className="text-5xl select-none">🎉</span>
+                    {dailyNum && (
+                      <div className="text-4xl font-extrabold text-neutral-900 mt-3 select-none">
+                        {dailyNum}
+                      </div>
+                    )}
+                    <h3 className="text-lg font-bold text-neutral-950 mt-1">
+                      {unreviewedOrder ? "Confirm Delivery & Rate" : "Leave Feedback for Order"}
+                    </h3>
+                    <p className="text-xs text-neutral-500 mt-1.5">
+                      {activeOrderForRating 
+                        ? `Your order of ${activeOrderForRating.drink} (${activeOrderForRating.sugar}) has been delivered! Please rate it to confirm delivery.`
+                        : "Tell us how your beverage was and what improvements we can make."
+                      }
+                    </p>
+                  </div>
 
-            <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4 text-left">
-              {/* 5-Star Selector */}
-              <div>
-                <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
-                  Rating (Stars):
-                </label>
-                <div className="flex justify-center gap-3 text-3xl">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      type="button"
-                      key={star}
-                      onClick={() => setReviewRating(star)}
-                      className={`transition-all hover:scale-125 cursor-pointer ${
-                        star <= reviewRating ? "opacity-100 transform scale-110" : "opacity-30"
-                      }`}
-                    >
-                      ⭐
-                    </button>
-                  ))}
-                </div>
-              </div>
+                  <form onSubmit={handleReviewSubmit} className="mt-6 space-y-4 text-left">
+                    {/* Reaction-based Selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                        How was it?
+                      </label>
+                      <div className="flex gap-2">
+                        {reactions.map((r) => (
+                          <button
+                            type="button"
+                            key={r.value}
+                            onClick={() => setReviewRating(r.value)}
+                            className={`flex flex-col items-center p-2 rounded-xl border transition-all cursor-pointer flex-1 ${
+                              reviewRating === r.value
+                                ? "bg-amber-50 border-amber-300 scale-105 shadow-sm font-semibold"
+                                : "bg-white border-neutral-200 hover:bg-neutral-50"
+                            }`}
+                          >
+                            <span className="text-2xl mb-1">{r.emoji}</span>
+                            <span className="text-[10px] font-bold text-neutral-750">{r.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
 
-              {/* Feedback Comment */}
-              <div>
-                <label htmlFor="modal-comments" className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                  Review comments / suggestions:
-                </label>
-                <textarea
-                  id="modal-comments"
-                  rows={3}
-                  required
-                  value={reviewComments}
-                  onChange={(e) => setReviewComments(e.target.value)}
-                  placeholder="e.g. Perfectly brewed! Thank you!"
-                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
-                />
-              </div>
+                    {/* Feedback Comment */}
+                    <div>
+                      <label htmlFor="modal-comments" className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                        Review comments / suggestions:
+                      </label>
+                      <textarea
+                        id="modal-comments"
+                        rows={3}
+                        required
+                        value={reviewComments}
+                        onChange={(e) => setReviewComments(e.target.value)}
+                        placeholder="e.g. Perfectly brewed! Thank you!"
+                        className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                      />
+                    </div>
 
-              <div className="flex gap-3 justify-end mt-6">
-                {/* Only show Cancel button if this is NOT a mandatory unreviewedOrder popup */}
-                {!unreviewedOrder && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setReviewOrderId(null);
-                      setReviewComments("");
-                    }}
-                    className="px-4 py-2 rounded-lg border border-neutral-300 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white shadow transition-all cursor-pointer flex-grow text-center"
-                >
-                  Confirm & Submit Review ✓
-                </button>
-              </div>
-            </form>
+                    <div className="flex gap-3 justify-end mt-6">
+                      {/* Only show Cancel button if this is NOT a mandatory unreviewedOrder popup */}
+                      {!unreviewedOrder && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setReviewOrderId(null);
+                            setReviewComments("");
+                          }}
+                          className="px-4 py-2 rounded-lg border border-neutral-300 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white shadow transition-all cursor-pointer flex-grow text-center"
+                      >
+                        Confirm & Submit Review ✓
+                      </button>
+                    </div>
+                  </form>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
