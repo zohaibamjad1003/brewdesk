@@ -848,14 +848,15 @@ export default function AdminDashboard() {
             <p className="text-xs text-neutral-500 mb-4">Set active ordering time slots. Employees can order if current time matches any slot.</p>
             
             {/* List of active slots */}
-            <ul className="divide-y divide-neutral-100 max-h-36 overflow-y-auto pr-1 mb-4">
+            {/* List of active slots */}
+            <ul className="divide-y divide-neutral-200 dark:divide-neutral-700 max-h-36 overflow-y-auto p-3 mb-4 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-neutral-900/30">
               {serviceHours.length === 0 ? (
-                <li className="text-xs text-neutral-400 text-center py-4">No active service hours configured.</li>
+                <li className="text-xs text-neutral-500 dark:text-neutral-400 text-center py-4 font-medium">No active service hours configured.</li>
               ) : (
                 serviceHours.map((slot) => {
                   const isEditing = editingSlotId === slot.id;
                   return (
-                    <li key={slot.id} className="py-2.5 text-sm">
+                    <li key={slot.id} className="py-2.5 first:pt-0 last:pb-0 text-sm">
                       {isEditing ? (
                         <div className="space-y-2 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded border border-neutral-200 dark:border-neutral-800 shadow-inner">
                           <input
@@ -905,8 +906,8 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 pr-2">
-                            <p className="font-semibold text-neutral-800 dark:text-neutral-200 truncate">{slot.label}</p>
-                            <p className="text-xs text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                            <p className="font-bold text-neutral-900 dark:text-neutral-100 truncate">{slot.label}</p>
+                            <p className="text-xs font-bold text-neutral-700 dark:text-neutral-350 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
                           </div>
                           <div className="flex gap-1.5 shrink-0">
                             <button
