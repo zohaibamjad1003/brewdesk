@@ -849,7 +849,7 @@ export default function AdminDashboard() {
             
             {/* List of active slots */}
             {/* List of active slots */}
-            <ul className="divide-y divide-neutral-200 dark:divide-neutral-700 max-h-36 overflow-y-auto p-3 mb-4 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-neutral-50/50 dark:bg-neutral-900/30">
+            <ul className="divide-y divide-neutral-200 dark:divide-neutral-700 max-h-36 overflow-y-auto p-3 mb-4 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900/40">
               {serviceHours.length === 0 ? (
                 <li className="text-xs text-neutral-500 dark:text-neutral-400 text-center py-4 font-medium">No active service hours configured.</li>
               ) : (
