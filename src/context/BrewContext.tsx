@@ -118,10 +118,12 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
           created_at,
           feedback_rating,
           feedback_comments,
-          employee_id,
-          profiles ( name, email )
+          custom_name,
+          profiles (
+            name
+          )
         `)
-        .order("created_at", { ascending: true });
+        .order("created_at", { ascending: false });
 
       if (error) {
         console.error("Error fetching orders:", error.message);
@@ -130,12 +132,14 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const mappedOrders = data.map((o: any) => ({
         id: o.id,
-        employeeName: o.profiles?.name || "Anonymous Employee",
+        employeeName: o.custom_name || o.profiles?.name || "Anonymous Employee",
         floor: o.floor_name,
         drink: o.drink_name,
         sugar: o.sugar,
         status: o.status,
         createdAt: o.created_at,
+        feedbackRating: o.feedback_rating,
+        feedbackComments: o.feedback_comments,
       }));
       setOrders(mappedOrders);
 
@@ -488,6 +492,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         drink_name: drink,
         sugar: sugar, // enum 'Sugar' | 'No Sugar'
         status: "Pending",
+        custom_name: employeeName,
       });
       if (error) {
         console.error("Error inserting order:", error.message);

@@ -77,6 +77,7 @@ export default function Home() {
   const [selectedFloor, setSelectedFloor] = useState("");
   const [selectedDrink, setSelectedDrink] = useState("");
   const [selectedSugar, setSelectedSugar] = useState("");
+  const [orderName, setOrderName] = useState("");
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMsg, setNotificationMsg] = useState("");
 
@@ -168,6 +169,9 @@ export default function Home() {
     }
     setSelectedDrink(drinks[0] || "");
     setSelectedSugar(sugarOptions[0] || "");
+    if (currentUser) {
+      setOrderName(currentUser.name);
+    }
   }, [currentUser, floors, drinks, sugarOptions]);
 
   // Handle Login submission
@@ -242,24 +246,30 @@ export default function Home() {
       return;
     }
 
-    // Safety checks
-    const myAllOrders = orders.filter((o) => o.employeeName === currentUser.name);
-    const hasActive = myAllOrders.some((o) => o.status === "Pending" || o.status === "On the way");
-    if (hasActive) return;
+    // Safety checks (Bypassed for Admin)
+    if (currentUser.role !== "Admin") {
+      const myAllOrders = orders.filter((o) => o.employeeName === currentUser.name);
+      const hasActive = myAllOrders.some((o) => o.status === "Pending" || o.status === "On the way");
+      if (hasActive) return;
 
-    const lastOrder = [...myAllOrders].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    )[0];
-    if (lastOrder) {
-      const realNow = new Date();
-      const currentSimTime = new Date(`${systemDate}T${realNow.toTimeString().split(" ")[0]}`);
-      const diffMins = (currentSimTime.getTime() - new Date(lastOrder.createdAt).getTime()) / (1000 * 60);
-      if (diffMins < 60) return;
+      const lastOrder = [...myAllOrders].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+      if (lastOrder) {
+        const realNow = new Date();
+        const currentSimTime = new Date(`${systemDate}T${realNow.toTimeString().split(" ")[0]}`);
+        const diffMins = (currentSimTime.getTime() - new Date(lastOrder.createdAt).getTime()) / (1000 * 60);
+        if (diffMins < 60) return;
+      }
     }
 
-    if (!selectedFloor || !selectedDrink || !selectedSugar) return;
+    if (!selectedFloor || !selectedDrink || !selectedSugar || !orderName.trim()) return;
 
-    placeOrder(currentUser.name, selectedFloor, selectedDrink, selectedSugar);
+    placeOrder(orderName, selectedFloor, selectedDrink, selectedSugar);
+
+    if (currentUser.role === "Admin") {
+      setOrderName(currentUser.name); // Reset back to default Admin name
+    }
 
     setNotificationMsg(`Order placed successfully for ${selectedDrink}!`);
     setShowNotification(true);
@@ -818,21 +828,36 @@ export default function Home() {
             <h2 className="text-lg font-bold text-neutral-900 mb-6">Beverage Request Form</h2>
 
             <form onSubmit={handleOrderSubmit} className="space-y-6">
-              {/* Employee Name (Disabled Auto-fill) */}
+              {/* Employee Name / Details */}
               <div>
-                <label className="block text-sm font-semibold text-neutral-700">
-                  Employee Name
+                <label htmlFor="order-name-input" className="block text-sm font-semibold text-neutral-700">
+                  Employee Name / Details
                 </label>
                 <div className="mt-1.5 relative">
-                  <input
-                    type="text"
-                    disabled
-                    value={currentUser.name}
-                    className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-600 outline-none cursor-not-allowed shadow-inner"
-                  />
-                  <span className="absolute right-3 top-3 text-xs font-semibold uppercase tracking-wider text-neutral-400">
-                    Auto-Filled
-                  </span>
+                  {currentUser.role === "Admin" ? (
+                    <input
+                      id="order-name-input"
+                      type="text"
+                      required
+                      value={orderName}
+                      onChange={(e) => setOrderName(e.target.value)}
+                      placeholder="e.g. Guest Name, Meeting Room..."
+                      className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-2.5 text-sm text-neutral-900 focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 transition-all shadow-sm outline-none"
+                    />
+                  ) : (
+                    <>
+                      <input
+                        id="order-name-input"
+                        type="text"
+                        disabled
+                        value={currentUser.name}
+                        className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-600 outline-none cursor-not-allowed shadow-inner"
+                      />
+                      <span className="absolute right-3 top-3 text-xs font-semibold uppercase tracking-wider text-neutral-400 select-none">
+                        Auto-Filled
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -905,11 +930,11 @@ export default function Home() {
                 <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800 text-center select-none shadow-sm animate-pulse">
                   🚫 Ordering Closed: Beverages are only available during the configured service slots.
                 </div>
-              ) : hasActiveOrder ? (
+              ) : currentUser.role !== "Admin" && hasActiveOrder ? (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs font-semibold text-amber-800 text-center select-none shadow-sm animate-pulse">
                   ⏳ Active Order In Progress: You can order again once your current beverage is delivered.
                 </div>
-              ) : cooldownRemaining > 0 ? (
+              ) : currentUser.role !== "Admin" && cooldownRemaining > 0 ? (
                 <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3.5 text-xs font-semibold text-neutral-500 text-center select-none shadow-sm">
                   ☕ Hourly Cooldown: Please wait {cooldownRemaining} minutes before placing your next order.
                 </div>
