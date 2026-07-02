@@ -25,13 +25,11 @@ export default function Home() {
     serviceHours,
   } = useBrew();
 
-  // Automatic client-side redirect based on user role
+  // Automatic client-side redirect based on user role (Only redirect Brewers)
   useEffect(() => {
     if (currentUser) {
       if (currentUser.role === "Brewer") {
         router.push("/brewer");
-      } else if (currentUser.role === "Admin") {
-        router.push("/admin");
       }
     }
   }, [currentUser, router]);
