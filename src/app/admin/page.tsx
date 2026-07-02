@@ -848,16 +848,16 @@ export default function AdminDashboard() {
             <p className="text-xs text-neutral-500 mb-4">Set active ordering time slots. Employees can order if current time matches any slot.</p>
             
             {/* List of active slots */}
-            <div className="mb-4 max-h-36 overflow-y-auto space-y-2 pr-1">
+            <ul className="divide-y divide-neutral-100 max-h-36 overflow-y-auto pr-1 mb-4">
               {serviceHours.length === 0 ? (
-                <p className="text-xs text-neutral-400 text-center py-4">No active service hours configured.</p>
+                <li className="text-xs text-neutral-400 text-center py-4">No active service hours configured.</li>
               ) : (
                 serviceHours.map((slot) => {
                   const isEditing = editingSlotId === slot.id;
                   return (
-                    <div key={slot.id} className="bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded border border-neutral-100 dark:border-neutral-800 text-xs">
+                    <li key={slot.id} className="py-2.5 text-sm">
                       {isEditing ? (
-                        <div className="space-y-2 p-1">
+                        <div className="space-y-2 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded border border-neutral-200 dark:border-neutral-800 shadow-inner">
                           <input
                             type="text"
                             value={editingSlotLabel}
@@ -903,10 +903,10 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between p-1">
-                          <div>
-                            <p className="font-bold text-neutral-800 dark:text-neutral-200">{slot.label}</p>
-                            <p className="text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0 pr-2">
+                            <p className="font-semibold text-neutral-800 dark:text-neutral-200 truncate">{slot.label}</p>
+                            <p className="text-xs text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
                           </div>
                           <div className="flex gap-1.5 shrink-0">
                             <button
@@ -926,11 +926,11 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </li>
                   );
                 })
               )}
-            </div>
+            </ul>
 
             {/* Add new slot form */}
             <form onSubmit={handleAddSlotSubmit} className="space-y-2 border-t border-neutral-100 pt-3">
