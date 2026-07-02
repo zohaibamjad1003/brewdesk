@@ -12,6 +12,8 @@ export interface Order {
   sugar: string; // "Sugar" or "No Sugar"
   status: "Pending" | "On the way" | "Delivered";
   createdAt: string; // ISO string date
+  feedbackRating?: number | null;
+  feedbackComments?: string | null;
 }
 
 // Define the Employee details
@@ -75,6 +77,7 @@ interface BrewContextType {
   deleteServiceHour: (id: string) => Promise<void>;
   updateServiceHour: (id: string, label: string, start: string, end: string) => Promise<void>;
   updateAvatarUrl: (avatarUrl: string) => Promise<void>;
+  getDailyOrderNumber: (orderId: string, createdAt: string) => string;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -774,22 +777,27 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update current user's profile image
   const updateAvatarUrl = async (avatarUrl: string) => {
     try {
-      if (!currentUser) return;
-
-      // Optimistic update of local user state
-      setCurrentUser((prev) => prev ? { ...prev, avatar_url: avatarUrl } : null);
-
       const { error } = await supabase
         .from("profiles")
         .update({ avatar_url: avatarUrl })
-        .eq("id", currentUser.id);
-
+        .eq("id", currentUser?.id);
       if (error) {
         console.error("Error updating avatar:", error.message);
       }
     } catch (err) {
       console.error("Exception updating avatar:", err);
     }
+  };
+
+  // Helper to compute daily order number dynamically
+  const getDailyOrderNumber = (orderId: string, createdAt: string) => {
+    if (!createdAt) return "";
+    const dateStr = createdAt.substring(0, 10);
+    const dayOrders = [...orders]
+      .filter((o) => o.createdAt && o.createdAt.substring(0, 10) === dateStr)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const index = dayOrders.findIndex((o) => o.id === orderId);
+    return index !== -1 ? `#${index + 1}` : "";
   };
 
   return (
@@ -826,6 +834,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         deleteServiceHour,
         updateServiceHour,
         updateAvatarUrl,
+        getDailyOrderNumber,
       }}
     >
       {children}

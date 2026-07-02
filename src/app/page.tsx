@@ -23,6 +23,7 @@ export default function Home() {
     systemDate,
     brewers,
     serviceHours,
+    getDailyOrderNumber,
   } = useBrew();
 
   // Automatic client-side redirect based on user role (Only redirect Brewers)
@@ -997,6 +998,7 @@ export default function Home() {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <h3 className="font-semibold text-sm text-neutral-900">
+                            <span className="font-bold text-amber-800 mr-1">{getDailyOrderNumber(order.id, order.createdAt)}</span>
                             {order.drink}
                             <span className="text-xs font-normal text-neutral-500 ml-1.5">
                               ({order.sugar})

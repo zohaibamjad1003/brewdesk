@@ -29,6 +29,7 @@ export default function AdminDashboard() {
     addServiceHour,
     deleteServiceHour,
     updateServiceHour,
+    getDailyOrderNumber,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -506,7 +507,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-neutral-900 text-sm">{rev.employeeName}</span>
-                    <span className="text-[10px] text-neutral-400 font-mono ml-2">({rev.drinkName})</span>
+                    <span className="text-[10px] text-neutral-550 font-bold font-mono ml-2">({getDailyOrderNumber(rev.orderId, rev.createdAt)} - {rev.drinkName})</span>
                   </div>
                   <div className="text-amber-500 text-sm font-semibold select-none">
                     {"⭐".repeat(rev.rating)}
@@ -1016,7 +1017,9 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-neutral-100 bg-white text-neutral-800">
                 {sortedHistory.map((order) => (
                   <tr key={order.id} className="hover:bg-neutral-50/50">
-                    <td className="px-4 py-3 font-mono text-xs text-neutral-400">{order.id}</td>
+                    <td className="px-4 py-3 font-bold text-neutral-900 font-mono" title={order.id}>
+                      {getDailyOrderNumber(order.id, order.createdAt)}
+                    </td>
                     <td className="px-4 py-3 font-semibold text-neutral-900">{order.employeeName}</td>
                     <td className="px-4 py-3 text-neutral-600">{order.floor}</td>
                     <td className="px-4 py-3">

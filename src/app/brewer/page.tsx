@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useBrew, Order } from "../../context/BrewContext";
 
 export default function BrewerQueue() {
-  const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus } = useBrew();
+  const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus, getDailyOrderNumber } = useBrew();
   const currentBrewer = brewers.find((b) => b.id === currentUser?.id);
 
   const [newOrderAlert, setNewOrderAlert] = useState(false);
@@ -291,6 +291,7 @@ export default function BrewerQueue() {
                           {index + 1}
                         </span>
                         <h3 className="font-bold text-base text-neutral-900">
+                          <span className="text-amber-800 font-bold mr-1">{getDailyOrderNumber(order.id, order.createdAt)}</span>
                           {order.drink}
                           <span className="text-xs font-normal text-neutral-500 ml-2">
                             ({order.sugar})
@@ -359,22 +360,42 @@ export default function BrewerQueue() {
             ) : (
               <div className="divide-y divide-neutral-100 overflow-y-auto max-h-[500px]">
                 {completedOrders.map((order) => (
-                  <div key={order.id} className="py-3 first:pt-0 last:pb-0">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h4 className="font-semibold text-sm text-neutral-900">
-                          {order.drink}
-                          <span className="text-xs font-normal text-neutral-500 ml-1">
-                            ({order.sugar})
-                          </span>
-                        </h4>
-                        <p className="text-xs text-neutral-600 mt-0.5">
-                          👤 {order.employeeName} • 📍 {order.floor}
-                        </p>
+                  <div key={order.id} className="py-3.5 first:pt-0 last:pb-0">
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h4 className="font-semibold text-sm text-neutral-900">
+                            <span className="text-amber-800 font-bold mr-1">{getDailyOrderNumber(order.id, order.createdAt)}</span>
+                            {order.drink}
+                            <span className="text-xs font-normal text-neutral-500 ml-1">
+                              ({order.sugar})
+                            </span>
+                          </h4>
+                          <p className="text-xs text-neutral-600 mt-0.5">
+                            👤 {order.employeeName} • 📍 {order.floor}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                          Done ✓
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                        Done ✓
-                      </span>
+                      
+                      {/* Live customer feedback preview */}
+                      {order.feedbackRating !== undefined && order.feedbackRating !== null && (
+                        <div className="mt-1 bg-amber-50/50 border border-amber-200/60 p-2.5 rounded-lg text-xs">
+                          <div className="flex items-center gap-1.5 font-bold text-amber-800">
+                            <span>{"⭐".repeat(order.feedbackRating)}</span>
+                            <span className="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-mono font-normal">
+                              {order.feedbackRating}/5 rating
+                            </span>
+                          </div>
+                          {order.feedbackComments && (
+                            <p className="mt-1 italic text-neutral-700 font-medium">
+                              &ldquo;{order.feedbackComments}&rdquo;
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
