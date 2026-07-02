@@ -169,18 +169,44 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq("role", "brewer");
 
       if (error) {
-        console.error("Error fetching brewers:", error.message);
+        // Fallback if status column does not exist yet in profiles table
+        if (error.message.includes("status") || error.code === "PGRST204" || error.code === "42703") {
+          console.warn("status column missing in profiles table. Fetching without status.");
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from("profiles")
+            .select("id, name, email, avatar_url")
+            .eq("role", "brewer");
+          if (fallbackError) {
+            console.error("Fallback brewers fetch error:", fallbackError.message);
+            return;
+          }
+          if (fallbackData) {
+            setBrewers(
+              fallbackData.map((b: any) => ({
+                id: b.id,
+                name: b.name,
+                contact: b.email || "",
+                status: "Active" as "Active" | "On Break" | "Off",
+                avatar_url: b.avatar_url || "",
+              }))
+            );
+          }
+        } else {
+          console.error("Error fetching brewers:", error.message);
+        }
         return;
       }
 
-      const mappedBrewers = data.map((b: any) => ({
-        id: b.id,
-        name: b.name,
-        contact: b.email || "",
-        status: (b.status === "On Break" ? "On Break" : b.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
-        avatar_url: b.avatar_url || "",
-      }));
-      setBrewers(mappedBrewers);
+      if (data) {
+        const mappedBrewers = data.map((b: any) => ({
+          id: b.id,
+          name: b.name,
+          contact: b.email || "",
+          status: (b.status === "On Break" ? "On Break" : b.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
+          avatar_url: b.avatar_url || "",
+        }));
+        setBrewers(mappedBrewers);
+      }
     } catch (err) {
       console.error("Brewers fetching exception:", err);
     }
