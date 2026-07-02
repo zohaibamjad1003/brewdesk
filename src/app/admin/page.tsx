@@ -362,6 +362,14 @@ export default function AdminDashboard() {
             >
               🌎 All Time
             </button>
+
+            {/* Link to Order Form */}
+            <Link
+              href="/"
+              className="rounded-lg bg-amber-700 hover:bg-amber-800 px-4 py-1.5 text-sm font-bold text-white shadow-sm transition-all flex items-center gap-1.5 cursor-pointer ml-1"
+            >
+              ☕ Place Order
+            </Link>
           </div>
         </div>
       </div>
