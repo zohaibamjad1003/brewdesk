@@ -22,6 +22,8 @@ export default function Home() {
     submitReview,
     systemDate,
     brewers,
+    beverageStartTime,
+    beverageEndTime,
   } = useBrew();
 
   // Automatic client-side redirect based on user role
@@ -89,6 +91,32 @@ export default function Home() {
   // Order limitation states (1 active order at a time, 1-hour cooldown)
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [isAvailable, setIsAvailable] = useState(true);
+
+  // Check current local time against ordering window settings
+  useEffect(() => {
+    const checkAvailability = () => {
+      if (!beverageStartTime || !beverageEndTime) {
+        setIsAvailable(true);
+        return;
+      }
+      const now = new Date();
+      const currentHrs = now.getHours();
+      const currentMins = now.getMinutes();
+      const currentTimeVal = currentHrs * 60 + currentMins;
+
+      const [startHrs, startMins] = beverageStartTime.split(":").map(Number);
+      const [endHrs, endMins] = beverageEndTime.split(":").map(Number);
+      const startTimeVal = startHrs * 60 + startMins;
+      const endTimeVal = endHrs * 60 + endMins;
+
+      setIsAvailable(currentTimeVal >= startTimeVal && currentTimeVal <= endTimeVal);
+    };
+
+    checkAvailability();
+    const interval = setInterval(checkAvailability, 15000); // Check every 15s
+    return () => clearInterval(interval);
+  }, [beverageStartTime, beverageEndTime]);
 
   useEffect(() => {
     if (!currentUser || !orders) {
@@ -208,6 +236,11 @@ export default function Home() {
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return;
+
+    if (!isAvailable) {
+      alert(`Ordering is closed. Beverages are only available between ${beverageStartTime} and ${beverageEndTime}.`);
+      return;
+    }
 
     // Safety checks
     const myAllOrders = orders.filter((o) => o.employeeName === currentUser.name);
@@ -702,9 +735,15 @@ export default function Home() {
             Select your floor and beverage preferences. Your order goes straight to the Brewer workstation.
           </p>
         </div>
-        <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
-          <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Active Work Day</span>
-          <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{systemDate}</span>
+        <div className="flex gap-3 justify-end">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
+            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Service Hours</span>
+            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{beverageStartTime} - {beverageEndTime}</span>
+          </div>
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
+            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Active Work Day</span>
+            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{systemDate}</span>
+          </div>
         </div>
       </div>
 
@@ -869,7 +908,11 @@ export default function Home() {
               </div>
 
               {/* Place Order Button with Gating and Cooldown display */}
-              {hasActiveOrder ? (
+              {!isAvailable ? (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800 text-center select-none shadow-sm animate-pulse">
+                  🚫 Ordering Closed: Beverages are only available between {beverageStartTime} and {beverageEndTime}.
+                </div>
+              ) : hasActiveOrder ? (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs font-semibold text-amber-800 text-center select-none shadow-sm animate-pulse">
                   ⏳ Active Order In Progress: You can order again once your current beverage is delivered.
                 </div>

@@ -68,6 +68,9 @@ interface BrewContextType {
   updateBrewer: (id: string, name: string, contact: string) => void;
   updateBrewerStatus: (id: string, status: "Active" | "On Break" | "Off") => Promise<void>;
   systemDate: string; // YYYY-MM-DD
+  beverageStartTime: string;
+  beverageEndTime: string;
+  updateBeverageTimeWindow: (start: string, end: string) => Promise<void>;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -85,6 +88,10 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [brewers, setBrewers] = useState<BrewerItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+
+  // Beverage availability times
+  const [beverageStartTime, setBeverageStartTime] = useState<string>("09:00");
+  const [beverageEndTime, setBeverageEndTime] = useState<string>("18:00");
 
   // Authenticated user and profile resolution loading states
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null>(null);
@@ -216,12 +223,34 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
 
+  // Fetch settings from database
+  const fetchSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("start_time, end_time")
+        .eq("key", "beverage_config")
+        .single();
+      if (error) {
+        console.error("Error fetching settings:", error.message);
+        return;
+      }
+      if (data) {
+        setBeverageStartTime(data.start_time.substring(0, 5));
+        setBeverageEndTime(data.end_time.substring(0, 5));
+      }
+    } catch (err) {
+      console.error("Settings fetching exception:", err);
+    }
+  };
+
   // Fetch initial database items and listen to real-time updates
   useEffect(() => {
     fetchOrders();
     fetchBrewersList();
     fetchEmployeesList();
     fetchFloors();
+    fetchSettings();
 
     const ordersChannel = supabase
       .channel("realtime-orders")
@@ -257,10 +286,22 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe();
 
+    const settingsChannel = supabase
+      .channel("realtime-settings")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "settings" },
+        () => {
+          fetchSettings();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(floorsChannel);
+      supabase.removeChannel(settingsChannel);
     };
   }, []);
 
@@ -614,6 +655,27 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Admin: Update Beverage ordering availability times settings
+  const updateBeverageTimeWindow = async (start: string, end: string) => {
+    try {
+      setBeverageStartTime(start);
+      setBeverageEndTime(end);
+
+      const { error } = await supabase
+        .from("settings")
+        .update({
+          start_time: `${start}:00`,
+          end_time: `${end}:00`,
+        })
+        .eq("key", "beverage_config");
+      if (error) {
+        console.error("Error updating settings:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating settings:", err);
+    }
+  };
+
   return (
     <BrewContext.Provider
       value={{
@@ -643,6 +705,9 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateBrewer,
         updateBrewerStatus,
         systemDate,
+        beverageStartTime,
+        beverageEndTime,
+        updateBeverageTimeWindow,
       }}
     >
       {children}

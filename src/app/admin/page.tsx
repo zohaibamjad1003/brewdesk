@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useBrew } from "../../context/BrewContext";
 
@@ -25,6 +25,9 @@ export default function AdminDashboard() {
     systemDate,
     currentUser,
     loading,
+    beverageStartTime,
+    beverageEndTime,
+    updateBeverageTimeWindow,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -65,6 +68,22 @@ export default function AdminDashboard() {
 
   // Toast for New Day Simulation
   const [showToast, setShowToast] = useState(false);
+
+  // Beverage ordering availability hours settings
+  const [settingsStartTime, setSettingsStartTime] = useState("");
+  const [settingsEndTime, setSettingsEndTime] = useState("");
+
+  useEffect(() => {
+    if (beverageStartTime) setSettingsStartTime(beverageStartTime);
+    if (beverageEndTime) setSettingsEndTime(beverageEndTime);
+  }, [beverageStartTime, beverageEndTime]);
+
+  const handleSettingsSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!settingsStartTime || !settingsEndTime) return;
+    updateBeverageTimeWindow(settingsStartTime, settingsEndTime);
+    alert("Ordering hours updated successfully!");
+  };
 
   // Loading spinner during session checks
   if (loading) {
@@ -479,8 +498,8 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Row 3: Management Sections (3 Columns) */}
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-3 mb-8">
+      {/* Row 3: Management Sections (4 Columns) */}
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-8">
         {/* Floor Management */}
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
           <div>
@@ -825,6 +844,51 @@ export default function AdminDashboard() {
                 );
               })}
             </ul>
+          </div>
+        </div>
+
+        {/* Beverage Hours Configuration */}
+        <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
+          <div>
+            <h3 className="text-base font-bold text-neutral-900 mb-1">Service Availability</h3>
+            <p className="text-xs text-neutral-500 mb-4">Set the active time window when employees are allowed to place orders.</p>
+            
+            <form onSubmit={handleSettingsSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="settings-start-time" className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                  Start Ordering Time:
+                </label>
+                <input
+                  id="settings-start-time"
+                  type="time"
+                  required
+                  value={settingsStartTime}
+                  onChange={(e) => setSettingsStartTime(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="settings-end-time" className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
+                  End Ordering Time:
+                </label>
+                <input
+                  id="settings-end-time"
+                  type="time"
+                  required
+                  value={settingsEndTime}
+                  onChange={(e) => setSettingsEndTime(e.target.value)}
+                  className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-neutral-950 text-white rounded-lg py-2 text-sm font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer"
+              >
+                Update Hours ⏰
+              </button>
+            </form>
           </div>
         </div>
       </div>
