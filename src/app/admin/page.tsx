@@ -532,8 +532,25 @@ export default function AdminDashboard() {
                     <span className="font-semibold text-neutral-900 text-sm">{rev.employeeName}</span>
                     <span className="text-[10px] text-neutral-900 font-bold font-mono ml-2">({getDailyOrderNumber(rev.orderId, rev.createdAt)} - {rev.drinkName})</span>
                   </div>
-                  <div className="text-amber-500 text-sm font-semibold select-none">
-                    {"⭐".repeat(rev.rating)}
+                  <div className="flex items-center gap-1 select-none">
+                    {(() => {
+                      const reactionMap: Record<number, { emoji: string; label: string }> = {
+                        1: { emoji: "😞", label: "Poor" },
+                        2: { emoji: "😐", label: "OK" },
+                        3: { emoji: "🙂", label: "Good" },
+                        4: { emoji: "😋", label: "Delicious" },
+                        5: { emoji: "🤩", label: "Amazing!" }
+                      };
+                      const reactObj = reactionMap[rev.rating] || { emoji: "❓", label: "" };
+                      return (
+                        <>
+                          <span className="text-xl">{reactObj.emoji}</span>
+                          <span className="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-bold">
+                            {reactObj.label}
+                          </span>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
                 <p className="text-xs text-neutral-700 mt-2 bg-white rounded border border-neutral-100 p-2 shadow-inner">

@@ -415,11 +415,25 @@ export default function BrewerQueue() {
                       {/* Live customer feedback preview */}
                       {order.feedbackRating !== undefined && order.feedbackRating !== null && (
                         <div className="mt-1 bg-amber-50/50 border border-amber-200/60 p-2.5 rounded-lg text-xs">
-                          <div className="flex items-center gap-1.5 font-bold text-amber-800">
-                            <span>{"⭐".repeat(order.feedbackRating)}</span>
-                            <span className="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-mono font-normal">
-                              {order.feedbackRating}/5 rating
-                            </span>
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const reactionMap: Record<number, { emoji: string; label: string }> = {
+                                1: { emoji: "😞", label: "Poor" },
+                                2: { emoji: "😐", label: "OK" },
+                                3: { emoji: "🙂", label: "Good" },
+                                4: { emoji: "😋", label: "Delicious" },
+                                5: { emoji: "🤩", label: "Amazing!" }
+                              };
+                              const reactObj = reactionMap[order.feedbackRating] || { emoji: "❓", label: "" };
+                              return (
+                                <>
+                                  <span className="text-xl select-none">{reactObj.emoji}</span>
+                                  <span className="text-[10px] bg-amber-100 px-1.5 py-0.5 rounded text-amber-900 font-bold select-none">
+                                    {reactObj.label}
+                                  </span>
+                                </>
+                              );
+                            })()}
                           </div>
                           {order.feedbackComments && (
                             <p className="mt-1 italic text-neutral-700 font-medium">
