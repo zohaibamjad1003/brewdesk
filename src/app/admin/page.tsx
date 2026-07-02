@@ -27,7 +27,8 @@ export default function AdminDashboard() {
     loading,
   } = useBrew();
 
-  // Selected date filter (empty string falls back to systemDate)
+  // Analytics Filter States (Day vs All Time)
+  const [filterMode, setFilterMode] = useState<"day" | "all">("day");
   const [selectedFilterDate, setSelectedFilterDate] = useState<string>("");
   const activeFilterDate = selectedFilterDate || systemDate;
 
@@ -104,10 +105,10 @@ export default function AdminDashboard() {
     ])
   ).sort((a, b) => b.localeCompare(a)); // Newest first
 
-  // Filter orders to compute analytics matching the active day
-  const dayOrders = orders.filter(
-    (order) => order.createdAt.split("T")[0] === activeFilterDate
-  );
+  // Filter orders to compute analytics matching Selection
+  const dayOrders = filterMode === "all"
+    ? orders
+    : orders.filter((order) => order.createdAt.split("T")[0] === activeFilterDate);
 
   // 1. Stats calculations for selected day
   const totalOrders = dayOrders.length;
@@ -270,32 +271,57 @@ export default function AdminDashboard() {
         </div>
 
         {/* Date Filter */}
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Mode Selector */}
           <div className="flex items-center gap-2">
-            <label htmlFor="date-select" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-              Filter Day:
+            <label htmlFor="filter-mode" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Scope:
             </label>
             <select
-              id="date-select"
-              value={activeFilterDate}
-              onChange={(e) => setSelectedFilterDate(e.target.value)}
-              className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:border-neutral-950 focus:outline-none"
+              id="filter-mode"
+              value={filterMode}
+              onChange={(e) => setFilterMode(e.target.value as any)}
+              className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:outline-none"
             >
-              {uniqueDates.map((d) => (
-                <option key={d} value={d}>
-                  {d === systemDate ? `Today (${d})` : d}
-                </option>
-              ))}
+              <option value="day">📅 Single Day</option>
+              <option value="all">🌎 All Time</option>
             </select>
           </div>
+
+          {/* Calendar Picker (Only active when filterMode === 'day') */}
+          {filterMode === "day" && (
+            <div className="flex items-center gap-2">
+              <label htmlFor="date-picker" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+                Date:
+              </label>
+              <input
+                id="date-picker"
+                type="date"
+                value={activeFilterDate}
+                max={systemDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedFilterDate(e.target.value);
+                  }
+                }}
+                className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:outline-none"
+              />
+            </div>
+          )}
         </div>
       </div>
 
       {/* Day Identifier Sub-banner */}
-      <div className="rounded-lg bg-neutral-100 px-4 py-3 mb-6 flex items-center justify-between text-xs font-bold text-neutral-600 uppercase tracking-wider shadow-inner">
-        <span>Viewing Analytics for: {activeFilterDate === systemDate ? "Today" : activeFilterDate}</span>
-        {activeFilterDate !== systemDate && (
-          <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 uppercase">Archived Log</span>
+      <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800 px-4 py-3 mb-6 flex items-center justify-between text-xs font-bold text-neutral-600 dark:text-neutral-300 uppercase tracking-wider shadow-inner">
+        <span>
+          Viewing Analytics for: {filterMode === "all" ? "All Time (Cumulative History)" : (activeFilterDate === systemDate ? `Today (${activeFilterDate})` : activeFilterDate)}
+        </span>
+        {filterMode === "all" ? (
+          <span className="text-purple-800 bg-purple-50 dark:bg-purple-950/30 px-2 py-0.5 rounded border border-purple-200 dark:border-purple-800 uppercase">Cumulative Log</span>
+        ) : (
+          activeFilterDate !== systemDate && (
+            <span className="text-amber-800 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800 uppercase">Archived Log</span>
+          )
         )}
       </div>
 
@@ -788,7 +814,7 @@ export default function AdminDashboard() {
       {/* Row 4: Full Order History Log for Selected Day */}
       <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
         <h3 className="text-lg font-bold text-neutral-900 mb-4 flex items-center justify-between">
-          <span>Order Logs ({activeFilterDate})</span>
+          <span>Order Logs ({filterMode === "all" ? "All Time" : activeFilterDate})</span>
           <span className="text-xs font-semibold text-neutral-500">
             {sortedHistory.length} orders
           </span>
@@ -796,7 +822,7 @@ export default function AdminDashboard() {
         
         {sortedHistory.length === 0 ? (
           <div className="text-center py-12 text-neutral-400 text-sm">
-            No orders recorded for {activeFilterDate}.
+            No orders recorded for {filterMode === "all" ? "All Time" : activeFilterDate}.
           </div>
         ) : (
           <div className="overflow-x-auto">
