@@ -115,6 +115,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from("orders")
         .select(`
           id,
+          employee_id,
           floor_name,
           drink_name,
           sugar,
