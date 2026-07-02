@@ -178,6 +178,7 @@ export default function AdminDashboard() {
   const pendingOrders = dayOrders.filter((o) => o.status === "Pending").length;
   const onTheWayOrders = dayOrders.filter((o) => o.status === "On the way").length;
   const deliveredOrders = dayOrders.filter((o) => o.status === "Delivered").length;
+  const notFoundOrders = dayOrders.filter((o) => o.status === "Not Found").length;
 
   // 2. Floor Breakdown for selected day
   const floorCounts = floors.reduce((acc, floor) => {
@@ -416,8 +417,8 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Grid: 5 Core Counters (Includes Rating) */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 mb-8">
+      {/* Grid: 6 Core Counters (Includes Rating and Not Found) */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-6 mb-8">
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
           <span className="text-sm font-medium text-neutral-500">Total Orders</span>
           <p className="text-3xl font-extrabold text-neutral-900 mt-1">{totalOrders}</p>
@@ -433,6 +434,10 @@ export default function AdminDashboard() {
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
           <span className="text-sm font-medium text-emerald-600">Delivered</span>
           <p className="text-3xl font-extrabold text-emerald-600 mt-1">{deliveredOrders}</p>
+        </div>
+        <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <span className="text-sm font-medium text-red-650">Not Found ❌</span>
+          <p className="text-3xl font-extrabold text-red-650 mt-1">{notFoundOrders}</p>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm col-span-2 sm:col-span-1">
           <span className="text-sm font-medium text-purple-600">Avg Satisfaction</span>
@@ -529,7 +534,7 @@ export default function AdminDashboard() {
           <div className="text-center py-10 text-neutral-400 text-sm">No reviews submitted by employees yet.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[360px] overflow-y-auto pr-1">
-            {[...reviews].reverse().map((rev) => (
+            {[...reviews].map((rev) => (
               <div key={rev.id} className="rounded-lg border border-neutral-200 bg-neutral-50/50 p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
