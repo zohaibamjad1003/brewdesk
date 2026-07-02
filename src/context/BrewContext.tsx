@@ -67,10 +67,10 @@ interface BrewContextType {
   deleteBrewer: (id: string) => void;
   updateBrewer: (id: string, name: string, contact: string) => void;
   updateBrewerStatus: (id: string, status: "Active" | "On Break" | "Off") => Promise<void>;
-  systemDate: string; // YYYY-MM-DD
-  beverageStartTime: string;
-  beverageEndTime: string;
-  updateBeverageTimeWindow: (start: string, end: string) => Promise<void>;
+  systemDate: string;
+  serviceHours: { id: string; label: string; start_time: string; end_time: string }[];
+  addServiceHour: (label: string, start: string, end: string) => Promise<void>;
+  deleteServiceHour: (id: string) => Promise<void>;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -89,9 +89,8 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [brewers, setBrewers] = useState<BrewerItem[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
 
-  // Beverage availability times
-  const [beverageStartTime, setBeverageStartTime] = useState<string>("09:00");
-  const [beverageEndTime, setBeverageEndTime] = useState<string>("18:00");
+  // Multiple Beverage service hours slots
+  const [serviceHours, setServiceHours] = useState<{ id: string; label: string; start_time: string; end_time: string }[]>([]);
 
   // Authenticated user and profile resolution loading states
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null>(null);
@@ -223,24 +222,28 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
 
-  // Fetch settings from database
-  const fetchSettings = async () => {
+  // Fetch service hours slots from database
+  const fetchServiceHours = async () => {
     try {
       const { data, error } = await supabase
-        .from("settings")
-        .select("start_time, end_time")
-        .eq("key", "beverage_config")
-        .single();
+        .from("service_hours")
+        .select("id, label, start_time, end_time")
+        .order("start_time", { ascending: true });
+
       if (error) {
-        console.error("Error fetching settings:", error.message);
+        console.error("Error fetching service hours:", error.message);
         return;
       }
       if (data) {
-        setBeverageStartTime(data.start_time.substring(0, 5));
-        setBeverageEndTime(data.end_time.substring(0, 5));
+        setServiceHours(data.map((slot: any) => ({
+          id: slot.id,
+          label: slot.label,
+          start_time: slot.start_time.substring(0, 5),
+          end_time: slot.end_time.substring(0, 5),
+        })));
       }
     } catch (err) {
-      console.error("Settings fetching exception:", err);
+      console.error("Service hours fetching exception:", err);
     }
   };
 
@@ -250,7 +253,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchBrewersList();
     fetchEmployeesList();
     fetchFloors();
-    fetchSettings();
+    fetchServiceHours();
 
     const ordersChannel = supabase
       .channel("realtime-orders")
@@ -290,9 +293,9 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .channel("realtime-settings")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "settings" },
+        { event: "*", schema: "public", table: "service_hours" },
         () => {
-          fetchSettings();
+          fetchServiceHours();
         }
       )
       .subscribe();
@@ -655,24 +658,36 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Admin: Update Beverage ordering availability times settings
-  const updateBeverageTimeWindow = async (start: string, end: string) => {
+  // Admin: Add Service Hour Slot
+  const addServiceHour = async (label: string, start: string, end: string) => {
     try {
-      setBeverageStartTime(start);
-      setBeverageEndTime(end);
-
       const { error } = await supabase
-        .from("settings")
-        .update({
+        .from("service_hours")
+        .insert({
+          label: label.trim(),
           start_time: `${start}:00`,
           end_time: `${end}:00`,
-        })
-        .eq("key", "beverage_config");
+        });
       if (error) {
-        console.error("Error updating settings:", error.message);
+        console.error("Error adding service hour:", error.message);
       }
     } catch (err) {
-      console.error("Exception updating settings:", err);
+      console.error("Exception adding service hour:", err);
+    }
+  };
+
+  // Admin: Delete Service Hour Slot
+  const deleteServiceHour = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from("service_hours")
+        .delete()
+        .eq("id", id);
+      if (error) {
+        console.error("Error deleting service hour:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception deleting service hour:", err);
     }
   };
 
@@ -705,9 +720,9 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateBrewer,
         updateBrewerStatus,
         systemDate,
-        beverageStartTime,
-        beverageEndTime,
-        updateBeverageTimeWindow,
+        serviceHours,
+        addServiceHour,
+        deleteServiceHour,
       }}
     >
       {children}

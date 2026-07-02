@@ -25,9 +25,9 @@ export default function AdminDashboard() {
     systemDate,
     currentUser,
     loading,
-    beverageStartTime,
-    beverageEndTime,
-    updateBeverageTimeWindow,
+    serviceHours,
+    addServiceHour,
+    deleteServiceHour,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -69,20 +69,18 @@ export default function AdminDashboard() {
   // Toast for New Day Simulation
   const [showToast, setShowToast] = useState(false);
 
-  // Beverage ordering availability hours settings
-  const [settingsStartTime, setSettingsStartTime] = useState("");
-  const [settingsEndTime, setSettingsEndTime] = useState("");
+  // Multiple Beverage service hours slots input states
+  const [newSlotLabel, setNewSlotLabel] = useState("");
+  const [newSlotStartTime, setNewSlotStartTime] = useState("");
+  const [newSlotEndTime, setNewSlotEndTime] = useState("");
 
-  useEffect(() => {
-    if (beverageStartTime) setSettingsStartTime(beverageStartTime);
-    if (beverageEndTime) setSettingsEndTime(beverageEndTime);
-  }, [beverageStartTime, beverageEndTime]);
-
-  const handleSettingsSubmit = (e: React.FormEvent) => {
+  const handleAddSlotSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!settingsStartTime || !settingsEndTime) return;
-    updateBeverageTimeWindow(settingsStartTime, settingsEndTime);
-    alert("Ordering hours updated successfully!");
+    if (!newSlotLabel.trim() || !newSlotStartTime || !newSlotEndTime) return;
+    addServiceHour(newSlotLabel, newSlotStartTime, newSlotEndTime);
+    setNewSlotLabel("");
+    setNewSlotStartTime("");
+    setNewSlotEndTime("");
   };
 
   // Loading spinner during session checks
@@ -632,77 +630,25 @@ export default function AdminDashboard() {
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
-              {sortedEmployees.map((emp) => {
-                const isEditing = editingEmployeeId === emp.id;
-                return (
-                  <li key={emp.id} className="py-2.5 text-sm">
-                    {isEditing ? (
-                      <div className="space-y-2 bg-neutral-50 p-2 rounded border border-neutral-200 shadow-inner">
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-neutral-500 uppercase">Name</label>
-                          <input
-                            type="text"
-                            required
-                            value={editingEmployeeName}
-                            onChange={(e) => setEditingEmployeeName(e.target.value)}
-                            className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[10px] font-bold text-neutral-500 uppercase">Email/Mobile</label>
-                          <input
-                            type="text"
-                            value={editingEmployeeContact}
-                            onChange={(e) => setEditingEmployeeContact(e.target.value)}
-                            className="w-full rounded-md border border-neutral-300 px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none"
-                          />
-                        </div>
-                        <div className="flex gap-1.5 justify-end">
-                          <button
-                            type="button"
-                            onClick={() => setEditingEmployeeId(null)}
-                            className="text-[11px] font-bold text-neutral-600 hover:text-neutral-800 px-2 py-1 bg-white border border-neutral-200 rounded transition-all"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleEditEmployeeSave(emp.id)}
-                            className="text-[11px] font-bold text-white hover:bg-neutral-800 bg-neutral-950 px-2.5 py-1 rounded transition-all"
-                          >
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col min-w-0 pr-2">
-                          <span className="font-semibold text-neutral-800 truncate">{emp.name}</span>
-                          <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={emp.contact}>
-                            {emp.contact}
-                          </span>
-                        </div>
-                        <div className="flex gap-1.5 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleEditEmployeeStart(emp)}
-                            className="text-xs text-amber-700 hover:text-amber-900 font-semibold p-1 hover:underline"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => deleteEmployee(emp.id)}
-                            className="text-xs text-red-500 hover:text-red-700 font-semibold p-1 hover:underline"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
+              {sortedEmployees.map((emp) => (
+                <li key={emp.id} className="py-2.5 text-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex flex-col min-w-0 pr-2">
+                      <span className="font-semibold text-neutral-800 truncate">{emp.name}</span>
+                      <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={emp.contact}>
+                        {emp.contact}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteEmployee(emp.id)}
+                      className="text-xs text-red-500 hover:text-red-700 font-semibold p-1 hover:underline shrink-0"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
@@ -851,42 +797,71 @@ export default function AdminDashboard() {
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm flex flex-col justify-between">
           <div>
             <h3 className="text-base font-bold text-neutral-900 mb-1">Service Availability</h3>
-            <p className="text-xs text-neutral-500 mb-4">Set the active time window when employees are allowed to place orders.</p>
+            <p className="text-xs text-neutral-500 mb-4">Set active ordering time slots. Employees can order if current time matches any slot.</p>
             
-            <form onSubmit={handleSettingsSubmit} className="space-y-4">
+            {/* List of active slots */}
+            <div className="mb-4 max-h-36 overflow-y-auto space-y-2 pr-1">
+              {serviceHours.length === 0 ? (
+                <p className="text-xs text-neutral-400 text-center py-4">No active service hours configured.</p>
+              ) : (
+                serviceHours.map((slot) => (
+                  <div key={slot.id} className="flex items-center justify-between bg-neutral-50 p-2 rounded border border-neutral-100 text-xs">
+                    <div>
+                      <p className="font-bold text-neutral-800">{slot.label}</p>
+                      <p className="text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteServiceHour(slot.id)}
+                      className="text-red-500 hover:text-red-700 font-semibold p-1 hover:underline cursor-pointer"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add new slot form */}
+            <form onSubmit={handleAddSlotSubmit} className="space-y-2 border-t border-neutral-100 pt-3">
               <div>
-                <label htmlFor="settings-start-time" className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                  Start Ordering Time:
-                </label>
                 <input
-                  id="settings-start-time"
-                  type="time"
+                  type="text"
                   required
-                  value={settingsStartTime}
-                  onChange={(e) => setSettingsStartTime(e.target.value)}
-                  className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                  placeholder="Slot Label (e.g. Afternoon Tea)"
+                  value={newSlotLabel}
+                  onChange={(e) => setNewSlotLabel(e.target.value)}
+                  className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
                 />
               </div>
-
-              <div>
-                <label htmlFor="settings-end-time" className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider">
-                  End Ordering Time:
-                </label>
-                <input
-                  id="settings-end-time"
-                  type="time"
-                  required
-                  value={settingsEndTime}
-                  onChange={(e) => setSettingsEndTime(e.target.value)}
-                  className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Start:</label>
+                  <input
+                    type="time"
+                    required
+                    value={newSlotStartTime}
+                    onChange={(e) => setNewSlotStartTime(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">End:</label>
+                  <input
+                    type="time"
+                    required
+                    value={newSlotEndTime}
+                    onChange={(e) => setNewSlotEndTime(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                  />
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-neutral-950 text-white rounded-lg py-2 text-sm font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer"
+                className="w-full bg-neutral-950 text-white rounded-lg py-2 mt-2 text-xs font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer"
               >
-                Update Hours ⏰
+                Add Slot ⏰
               </button>
             </form>
           </div>

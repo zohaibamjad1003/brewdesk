@@ -22,8 +22,7 @@ export default function Home() {
     submitReview,
     systemDate,
     brewers,
-    beverageStartTime,
-    beverageEndTime,
+    serviceHours,
   } = useBrew();
 
   // Automatic client-side redirect based on user role
@@ -93,11 +92,11 @@ export default function Home() {
   const [cooldownRemaining, setCooldownRemaining] = useState(0);
   const [isAvailable, setIsAvailable] = useState(true);
 
-  // Check current local time against ordering window settings
+  // Check current local time against ordering window settings slots
   useEffect(() => {
     const checkAvailability = () => {
-      if (!beverageStartTime || !beverageEndTime) {
-        setIsAvailable(true);
+      if (serviceHours.length === 0) {
+        setIsAvailable(false); // If no slots configured, default to closed
         return;
       }
       const now = new Date();
@@ -105,18 +104,21 @@ export default function Home() {
       const currentMins = now.getMinutes();
       const currentTimeVal = currentHrs * 60 + currentMins;
 
-      const [startHrs, startMins] = beverageStartTime.split(":").map(Number);
-      const [endHrs, endMins] = beverageEndTime.split(":").map(Number);
-      const startTimeVal = startHrs * 60 + startMins;
-      const endTimeVal = endHrs * 60 + endMins;
+      const matched = serviceHours.some((slot) => {
+        const [startHrs, startMins] = slot.start_time.split(":").map(Number);
+        const [endHrs, endMins] = slot.end_time.split(":").map(Number);
+        const startTimeVal = startHrs * 60 + startMins;
+        const endTimeVal = endHrs * 60 + endMins;
+        return currentTimeVal >= startTimeVal && currentTimeVal <= endTimeVal;
+      });
 
-      setIsAvailable(currentTimeVal >= startTimeVal && currentTimeVal <= endTimeVal);
+      setIsAvailable(matched);
     };
 
     checkAvailability();
     const interval = setInterval(checkAvailability, 15000); // Check every 15s
     return () => clearInterval(interval);
-  }, [beverageStartTime, beverageEndTime]);
+  }, [serviceHours]);
 
   useEffect(() => {
     if (!currentUser || !orders) {
@@ -238,7 +240,7 @@ export default function Home() {
     if (!currentUser) return;
 
     if (!isAvailable) {
-      alert(`Ordering is closed. Beverages are only available between ${beverageStartTime} and ${beverageEndTime}.`);
+      alert("Ordering is closed. Beverages are only available during the configured service hour slots.");
       return;
     }
 
@@ -735,12 +737,23 @@ export default function Home() {
             Select your floor and beverage preferences. Your order goes straight to the Brewer workstation.
           </p>
         </div>
-        <div className="flex gap-3 justify-end">
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
-            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Service Hours</span>
-            <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{beverageStartTime} - {beverageEndTime}</span>
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 shadow-sm text-left">
+            <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Beverage service slots</span>
+            <div className="text-xs font-bold text-neutral-800 dark:text-neutral-200 mt-0.5 space-y-0.5 max-h-16 overflow-y-auto">
+              {serviceHours.length === 0 ? (
+                <span>Closed (No slots configured)</span>
+              ) : (
+                serviceHours.map((slot) => (
+                  <div key={slot.id} className="flex justify-between gap-3 text-[11px]">
+                    <span className="font-semibold text-neutral-600 dark:text-neutral-400">{slot.label}:</span>
+                    <span>{slot.start_time} - {slot.end_time}</span>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm">
+          <div className="rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-4 py-2 text-center shadow-sm h-fit">
             <span className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider block">Active Work Day</span>
             <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{systemDate}</span>
           </div>
@@ -910,7 +923,7 @@ export default function Home() {
               {/* Place Order Button with Gating and Cooldown display */}
               {!isAvailable ? (
                 <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800 text-center select-none shadow-sm animate-pulse">
-                  🚫 Ordering Closed: Beverages are only available between {beverageStartTime} and {beverageEndTime}.
+                  🚫 Ordering Closed: Beverages are only available during the configured service slots.
                 </div>
               ) : hasActiveOrder ? (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs font-semibold text-amber-800 text-center select-none shadow-sm animate-pulse">
