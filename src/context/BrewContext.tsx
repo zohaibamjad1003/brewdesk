@@ -151,12 +151,12 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         status: o.status === "Delivered" && o.feedback_comments === "__NOT_FOUND__" ? ("Not Found" as const) : o.status,
         createdAt: o.created_at,
         feedbackRating: o.feedback_comments === "__NOT_FOUND__" ? null : o.feedback_rating,
-        feedbackComments: o.feedback_comments === "__NOT_FOUND__" ? null : o.feedback_comments,
+        feedbackComments: o.feedback_comments,
       }));
       setOrders(mappedOrders);
 
       const mappedReviews = data
-        .filter((o: any) => o.feedback_rating !== null)
+        .filter((o: any) => o.feedback_rating !== null && o.feedback_comments !== "__NOT_FOUND__")
         .map((o: any) => ({
           id: o.id,
           orderId: o.id,

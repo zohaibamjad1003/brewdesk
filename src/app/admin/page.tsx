@@ -111,12 +111,13 @@ export default function AdminDashboard() {
   const [adminReviewRating, setAdminReviewRating] = useState(5);
   const [adminReviewComments, setAdminReviewComments] = useState("");
 
-  // Find any unreviewed delivered orders placed by the Admin
+  // Find any unreviewed delivered orders placed by the Admin (Ignore Not Found orders)
   const unreviewedOrder = currentUser
     ? orders.find(
         (o) =>
           o.employeeId === currentUser.id &&
           o.status === "Delivered" &&
+          o.feedbackComments !== "__NOT_FOUND__" &&
           (o.feedbackRating === undefined || o.feedbackRating === null)
       )
     : undefined;

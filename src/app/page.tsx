@@ -345,12 +345,13 @@ export default function Home() {
     return () => clearTimeout(timer);
   };
 
-  // Find any unreviewed delivered orders placed by the current user
+  // Find any unreviewed delivered orders placed by the current user (Ignore Not Found orders)
   const unreviewedOrder = currentUser
     ? orders.find(
         (o) =>
           o.employeeId === currentUser.id &&
           o.status === "Delivered" &&
+          o.feedbackComments !== "__NOT_FOUND__" &&
           (o.feedbackRating === undefined || o.feedbackRating === null)
       )
     : undefined;
