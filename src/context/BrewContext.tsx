@@ -531,9 +531,11 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq("id", id);
       if (error) {
         console.error("Error updating status:", error.message);
+        alert("Error updating status: " + error.message);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Exception updating status:", err);
+      alert("Error updating status: " + (err.message || err));
     }
   };
 
