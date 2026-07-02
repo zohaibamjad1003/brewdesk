@@ -24,7 +24,7 @@ const EditGraceTrigger = ({
     const checkTime = () => {
       const created = new Date(order.createdAt).getTime();
       const elapsed = Date.now() - created;
-      const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
+      const remaining = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
       setTimeLeft(remaining);
     };
 

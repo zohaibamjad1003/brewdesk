@@ -16,7 +16,7 @@ const EditCountdownTimer = ({ createdAt, status }: { createdAt: string; status: 
     const updateTimer = () => {
       const created = new Date(createdAt).getTime();
       const elapsed = Date.now() - created;
-      const left = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
+      const left = Math.max(0, Math.ceil((30000 - elapsed) / 1000));
       setSecondsLeft(left);
     };
 
