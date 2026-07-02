@@ -6,6 +6,51 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { useBrew } from "../context/BrewContext";
 
+const EditGraceTrigger = ({ 
+  order, 
+  onEditClick 
+}: { 
+  order: any; 
+  onEditClick: () => void 
+}) => {
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    if (order.status !== "Pending") {
+      setTimeLeft(0);
+      return;
+    }
+
+    const checkTime = () => {
+      const created = new Date(order.createdAt).getTime();
+      const elapsed = Date.now() - created;
+      const remaining = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
+      setTimeLeft(remaining);
+    };
+
+    checkTime();
+    const interval = setInterval(checkTime, 1000);
+    return () => clearInterval(interval);
+  }, [order.createdAt, order.status]);
+
+  if (timeLeft <= 0) return null;
+
+  return (
+    <div className="flex items-center gap-2 mt-1 select-none">
+      <span className="text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded animate-pulse">
+        ⏱️ Edit window: {timeLeft}s
+      </span>
+      <button
+        type="button"
+        onClick={onEditClick}
+        className="text-[10px] font-bold text-neutral-900 bg-white hover:bg-neutral-100 px-2 py-0.5 rounded border border-neutral-300 cursor-pointer transition-all shadow-sm flex items-center gap-0.5"
+      >
+        <span>Edit Order</span> ✏️
+      </button>
+    </div>
+  );
+};
+
 export default function Home() {
   const router = useRouter();
   const {
@@ -24,6 +69,7 @@ export default function Home() {
     brewers,
     serviceHours,
     getDailyOrderNumber,
+    updateOrderDetails,
   } = useBrew();
 
   // Automatic client-side redirect based on user role (Only redirect Brewers)
@@ -86,6 +132,12 @@ export default function Home() {
   const [reviewOrderId, setReviewOrderId] = useState<string | null>(null);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComments, setReviewComments] = useState("");
+
+  // Local state for editing order details
+  const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
+  const [editDrink, setEditDrink] = useState("");
+  const [editSugar, setEditSugar] = useState("");
+  const [editFloor, setEditFloor] = useState("");
 
   // Order limitation states (1 active order at a time, 1-hour cooldown)
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
@@ -936,51 +988,133 @@ export default function Home() {
               <div className="flex-1 divide-y divide-neutral-100 overflow-y-auto max-h-[420px] pr-1">
                 {myOrders.map((order) => {
                   const hasReview = reviews.some((r) => r.orderId === order.id);
+                  const isEditing = editingOrderId === order.id;
+
                   return (
                     <div key={order.id} className="py-4 first:pt-0 last:pb-0">
-                      <div className="flex items-start justify-between gap-4">
-                        <div>
-                          <h3 className="font-semibold text-sm text-neutral-900">
-                            <span className="font-extrabold text-neutral-900 mr-1.5">{getDailyOrderNumber(order.id, order.createdAt)}</span>
-                            {order.drink}
-                            <span className="text-xs font-normal text-neutral-500 ml-1.5">
-                              ({order.sugar})
-                            </span>
-                          </h3>
-                          <p className="text-xs text-neutral-500 mt-0.5">
-                            📍 {order.floor}
-                          </p>
-                          <p className="text-[10px] text-neutral-400 mt-1">
-                            Ordered at{" "}
-                            {new Date(order.createdAt).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          {getStatusBadge(order.status)}
-
-                          {/* Leave Feedback trigger for delivered orders */}
-                          {order.status === "Delivered" && (
-                            <div className="mt-1">
-                              {hasReview ? (
-                                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 select-none">
-                                  <span>✓</span> Reviewed
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setReviewOrderId(order.id)}
-                                  className="text-xs text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer"
-                                >
-                                  ⭐ Rate Beverage
-                                </button>
-                              )}
+                      {isEditing ? (
+                        <form onSubmit={(e) => {
+                          e.preventDefault();
+                          updateOrderDetails(order.id, editDrink, editSugar, editFloor);
+                          setEditingOrderId(null);
+                        }} className="w-full space-y-3 bg-neutral-50 p-3.5 rounded-lg border border-neutral-200 my-1">
+                          <h4 className="text-xs font-bold text-neutral-800">Edit Order {getDailyOrderNumber(order.id, order.createdAt)}</h4>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            {/* Drink Select */}
+                            <div>
+                              <label className="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Drink</label>
+                              <select
+                                value={editDrink}
+                                onChange={(e) => setEditDrink(e.target.value)}
+                                className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:outline-none"
+                              >
+                                {drinks.map((d) => (
+                                  <option key={d} value={d}>{d}</option>
+                                ))}
+                              </select>
                             </div>
-                          )}
+                            
+                            {/* Sugar Option */}
+                            <div>
+                              <label className="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Sugar</label>
+                              <select
+                                value={editSugar}
+                                onChange={(e) => setEditSugar(e.target.value)}
+                                className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:outline-none"
+                              >
+                                {sugarOptions.map((s) => (
+                                  <option key={s} value={s}>{s}</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Floor Option */}
+                            <div>
+                              <label className="block text-[9px] font-bold text-neutral-500 uppercase tracking-wider mb-0.5">Floor</label>
+                              <select
+                                value={editFloor}
+                                onChange={(e) => setEditFloor(e.target.value)}
+                                className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:outline-none"
+                              >
+                                {floors.map((f) => (
+                                  <option key={f} value={f}>{f}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setEditingOrderId(null)}
+                              className="px-2.5 py-1 text-xs font-semibold bg-white border border-neutral-300 rounded text-neutral-700 hover:bg-neutral-50 cursor-pointer"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="submit"
+                              className="px-3 py-1 text-xs font-semibold bg-neutral-950 text-white rounded hover:bg-neutral-800 cursor-pointer"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <h3 className="font-semibold text-sm text-neutral-900 flex items-center flex-wrap gap-1">
+                              <span className="font-extrabold text-neutral-900 mr-1.5">{getDailyOrderNumber(order.id, order.createdAt)}</span>
+                              {order.drink}
+                              <span className="text-xs font-normal text-neutral-500">
+                                ({order.sugar})
+                              </span>
+                            </h3>
+                            <p className="text-xs text-neutral-500 mt-0.5">
+                              📍 {order.floor}
+                            </p>
+                            <p className="text-[10px] text-neutral-400 mt-1">
+                              Ordered at{" "}
+                              {new Date(order.createdAt).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            
+                            {/* Grace edit window countdown timer */}
+                            <EditGraceTrigger
+                              order={order}
+                              onEditClick={() => {
+                                setEditingOrderId(order.id);
+                                setEditDrink(order.drink);
+                                setEditSugar(order.sugar);
+                                setEditFloor(order.floor);
+                              }}
+                            />
+                          </div>
+                          <div className="flex flex-col items-end gap-2">
+                            {getStatusBadge(order.status)}
+
+                            {/* Leave Feedback trigger for delivered orders */}
+                            {order.status === "Delivered" && (
+                              <div className="mt-1">
+                                {hasReview ? (
+                                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1 select-none">
+                                    <span>✓</span> Reviewed
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setReviewOrderId(order.id)}
+                                    className="text-xs text-amber-700 hover:text-amber-900 font-bold underline cursor-pointer"
+                                  >
+                                    ⭐ Rate Beverage
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 })}

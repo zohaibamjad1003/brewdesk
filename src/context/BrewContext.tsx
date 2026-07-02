@@ -61,6 +61,7 @@ interface BrewContextType {
   logout: () => Promise<void>;
   placeOrder: (employeeName: string, floor: string, drink: string, sugar: string) => Promise<void>;
   updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => Promise<void>;
+  updateOrderDetails: (id: string, drink: string, sugar: string, floor: string) => Promise<void>;
   submitReview: (orderId: string, rating: number, comments: string) => Promise<void>;
   addFloor: (floorName: string) => void;
   deleteFloor: (floorName: string) => void;
@@ -571,6 +572,26 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Function to update an order's drink, sugar, or location details during edit window
+  const updateOrderDetails = async (id: string, drink: string, sugar: string, floor: string) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          drink_name: drink,
+          sugar: sugar,
+          floor_name: floor,
+        })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating order details:", error.message);
+        alert("Error updating order details: " + error.message);
+      }
+    } catch (err: any) {
+      console.error("Exception updating order details:", err);
+    }
+  };
+
   // Function to submit a review/improvement feedback
   const submitReview = async (orderId: string, rating: number, comments: string) => {
     try {
@@ -838,6 +859,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateServiceHour,
         updateAvatarUrl,
         getDailyOrderNumber,
+        updateOrderDetails,
       }}
     >
       {children}

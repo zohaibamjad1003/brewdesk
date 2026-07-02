@@ -4,6 +4,37 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useBrew, Order } from "../../context/BrewContext";
 
+const EditCountdownTimer = ({ createdAt, status }: { createdAt: string; status: string }) => {
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (status !== "Pending") {
+      setSecondsLeft(0);
+      return;
+    }
+
+    const updateTimer = () => {
+      const created = new Date(createdAt).getTime();
+      const elapsed = Date.now() - created;
+      const left = Math.max(0, Math.ceil((20000 - elapsed) / 1000));
+      setSecondsLeft(left);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+
+    return () => clearInterval(interval);
+  }, [createdAt, status]);
+
+  if (secondsLeft <= 0) return null;
+
+  return (
+    <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-850 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-200 animate-pulse select-none ml-1.5">
+      ⏱️ Edit: {secondsLeft}s
+    </span>
+  );
+};
+
 export default function BrewerQueue() {
   const { orders, updateOrderStatus, currentUser, systemDate, loading, brewers, updateBrewerStatus, getDailyOrderNumber } = useBrew();
   const currentBrewer = brewers.find((b) => b.id === currentUser?.id);
@@ -290,12 +321,13 @@ export default function BrewerQueue() {
                         <span className="flex h-5 w-5 items-center justify-center rounded-full bg-neutral-900 text-[10px] font-bold text-white">
                           {index + 1}
                         </span>
-                        <h3 className="font-bold text-base text-neutral-900">
+                        <h3 className="font-bold text-base text-neutral-900 flex items-center flex-wrap gap-1.5">
                           <span className="text-neutral-900 font-extrabold mr-1.5">{getDailyOrderNumber(order.id, order.createdAt)}</span>
                           {order.drink}
-                          <span className="text-xs font-normal text-neutral-500 ml-2">
+                          <span className="text-xs font-normal text-neutral-500">
                             ({order.sugar})
                           </span>
+                          <EditCountdownTimer createdAt={order.createdAt} status={order.status} />
                         </h3>
                       </div>
                       <p className="text-sm text-neutral-700 font-medium">
