@@ -507,7 +507,7 @@ export default function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="font-semibold text-neutral-900 text-sm">{rev.employeeName}</span>
-                    <span className="text-[10px] text-neutral-550 font-bold font-mono ml-2">({getDailyOrderNumber(rev.orderId, rev.createdAt)} - {rev.drinkName})</span>
+                    <span className="text-[10px] text-neutral-900 font-bold font-mono ml-2">({getDailyOrderNumber(rev.orderId, rev.createdAt)} - {rev.drinkName})</span>
                   </div>
                   <div className="text-amber-500 text-sm font-semibold select-none">
                     {"⭐".repeat(rev.rating)}

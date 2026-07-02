@@ -291,7 +291,7 @@ export default function BrewerQueue() {
                           {index + 1}
                         </span>
                         <h3 className="font-bold text-base text-neutral-900">
-                          <span className="text-amber-800 font-bold mr-1">{getDailyOrderNumber(order.id, order.createdAt)}</span>
+                          <span className="text-neutral-900 font-extrabold mr-1.5">{getDailyOrderNumber(order.id, order.createdAt)}</span>
                           {order.drink}
                           <span className="text-xs font-normal text-neutral-500 ml-2">
                             ({order.sugar})
@@ -365,7 +365,7 @@ export default function BrewerQueue() {
                       <div className="flex items-center justify-between gap-3">
                         <div>
                           <h4 className="font-semibold text-sm text-neutral-900">
-                            <span className="text-amber-800 font-bold mr-1">{getDailyOrderNumber(order.id, order.createdAt)}</span>
+                            <span className="text-neutral-900 font-extrabold mr-1.5">{getDailyOrderNumber(order.id, order.createdAt)}</span>
                             {order.drink}
                             <span className="text-xs font-normal text-neutral-500 ml-1">
                               ({order.sugar})
