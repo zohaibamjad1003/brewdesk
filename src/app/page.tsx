@@ -36,7 +36,19 @@ export default function Home() {
   }, [currentUser, router]);
 
   // Login form states
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("signup");
+
+  // Detect return visitors who have created an account or logged in before
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasAccount = localStorage.getItem("has_account");
+      if (hasAccount === "true") {
+        setActiveTab("login");
+      } else {
+        setActiveTab("signup");
+      }
+    }
+  }, []);
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authRole, setAuthRole] = useState<"Employee" | "Brewer" | "Admin">("Employee");
@@ -140,6 +152,9 @@ export default function Home() {
     if (!result.success) {
       setAuthError(result.error || "Login credentials failed.");
     } else {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("has_account", "true");
+      }
       setAuthEmail("");
       setAuthPassword("");
     }
@@ -155,6 +170,9 @@ export default function Home() {
     if (!result.success) {
       setSignUpError(result.error || "Sign-up account creation failed.");
     } else {
+      if (typeof window !== "undefined") {
+        localStorage.setItem("has_account", "true");
+      }
       setSignUpName("");
       setSignUpEmail("");
       setSignUpPassword("");
