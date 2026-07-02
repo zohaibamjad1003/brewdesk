@@ -295,6 +295,22 @@ export default function AdminDashboard() {
               }`}
             />
 
+            {/* Today shortcut button */}
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedFilterDate(""); // Reset to systemDate (Today)
+                setFilterMode("day");
+              }}
+              className={`rounded-lg border px-4 py-1.5 text-sm font-bold shadow-sm transition-all cursor-pointer ${
+                filterMode === "day" && activeFilterDate === systemDate
+                  ? "bg-neutral-950 dark:bg-neutral-100 text-white dark:text-neutral-950 border-neutral-950 dark:border-neutral-100"
+                  : "bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+              }`}
+            >
+              ☀️ Today
+            </button>
+
             {/* All Time toggle button */}
             <button
               type="button"
