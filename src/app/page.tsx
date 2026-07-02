@@ -36,7 +36,7 @@ export default function Home() {
   }, [currentUser, router]);
 
   // Login form states
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("signup");
   const [authEmail, setAuthEmail] = useState("");
   const [authPassword, setAuthPassword] = useState("");
   const [authRole, setAuthRole] = useState<"Employee" | "Brewer" | "Admin">("Employee");
