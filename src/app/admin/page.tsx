@@ -907,7 +907,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 pr-2">
                             <p className="font-bold text-neutral-900 truncate">{slot.label}</p>
-                            <p className="text-xs font-bold text-neutral-650 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                            <p className="text-xs font-bold text-neutral-900 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
                           </div>
                           <div className="flex gap-1.5 shrink-0">
                             <button
