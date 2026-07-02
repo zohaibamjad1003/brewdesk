@@ -270,44 +270,46 @@ export default function AdminDashboard() {
           </p>
         </div>
 
-        {/* Date Filter */}
-        <div className="flex flex-wrap items-center gap-4">
-          {/* Mode Selector */}
+        {/* Date Filter Controls */}
+        <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
-            <label htmlFor="filter-mode" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-              Scope:
-            </label>
-            <select
-              id="filter-mode"
-              value={filterMode}
-              onChange={(e) => setFilterMode(e.target.value as any)}
-              className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:outline-none"
-            >
-              <option value="day">📅 Single Day</option>
-              <option value="all">🌎 All Time</option>
-            </select>
-          </div>
+            <span className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+              Filter:
+            </span>
+            
+            {/* Calendar input */}
+            <input
+              type="date"
+              value={selectedFilterDate || systemDate}
+              max={systemDate}
+              onChange={(e) => {
+                if (e.target.value) {
+                  setSelectedFilterDate(e.target.value);
+                  setFilterMode("day"); // Switch back to day mode when calendar is used
+                }
+              }}
+              className={`rounded-lg border px-3 py-1.5 text-sm font-semibold shadow-sm focus:outline-none transition-all cursor-pointer ${
+                filterMode === "day"
+                  ? "border-neutral-900 dark:border-neutral-100 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 ring-1 ring-neutral-900 dark:ring-neutral-100"
+                  : "border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50 text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+              }`}
+            />
 
-          {/* Calendar Picker (Only active when filterMode === 'day') */}
-          {filterMode === "day" && (
-            <div className="flex items-center gap-2">
-              <label htmlFor="date-picker" className="text-xs font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
-                Date:
-              </label>
-              <input
-                id="date-picker"
-                type="date"
-                value={activeFilterDate}
-                max={systemDate}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setSelectedFilterDate(e.target.value);
-                  }
-                }}
-                className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-sm font-semibold text-neutral-700 dark:text-neutral-200 shadow-sm focus:outline-none"
-              />
-            </div>
-          )}
+            {/* All Time toggle button */}
+            <button
+              type="button"
+              onClick={() => {
+                setFilterMode("all");
+              }}
+              className={`rounded-lg border px-4 py-1.5 text-sm font-bold shadow-sm transition-all cursor-pointer ${
+                filterMode === "all"
+                  ? "bg-neutral-950 dark:bg-neutral-100 text-white dark:text-neutral-950 border-neutral-950 dark:border-neutral-100"
+                  : "bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-700"
+              }`}
+            >
+              🌎 All Time
+            </button>
+          </div>
         </div>
       </div>
 
