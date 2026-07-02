@@ -299,6 +299,12 @@ export default function Home() {
       return;
     }
 
+    const isAnyBrewerActive = brewers.some((bwr) => bwr.status === "Active");
+    if (!isAnyBrewerActive) {
+      alert("Ordering is unavailable. No brewers are currently Active (all brewers are On Break or Off).");
+      return;
+    }
+
     // Safety checks (Bypassed for Admin)
     if (currentUser.role !== "Admin") {
       const myAllOrders = orders.filter((o) => o.employeeName === currentUser.name);
@@ -925,6 +931,10 @@ export default function Home() {
               {!isAvailable ? (
                 <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800 text-center select-none shadow-sm animate-pulse">
                   🚫 Ordering Closed: Beverages are only available during the configured service slots.
+                </div>
+              ) : !brewers.some((b) => b.status === "Active") ? (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs font-semibold text-amber-800 text-center select-none shadow-sm animate-pulse">
+                  ⚠️ Ordering Unavailable: No brewers are currently Active (all brewers are On Break or Off).
                 </div>
               ) : currentUser.role !== "Admin" && hasActiveOrder ? (
                 <div className="rounded-lg bg-amber-50 border border-amber-200 p-3.5 text-xs font-semibold text-amber-800 text-center select-none shadow-sm animate-pulse">
