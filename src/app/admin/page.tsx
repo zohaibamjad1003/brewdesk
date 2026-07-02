@@ -28,6 +28,7 @@ export default function AdminDashboard() {
     serviceHours,
     addServiceHour,
     deleteServiceHour,
+    updateServiceHour,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -81,6 +82,25 @@ export default function AdminDashboard() {
     setNewSlotLabel("");
     setNewSlotStartTime("");
     setNewSlotEndTime("");
+  };
+
+  // Edit service hours states
+  const [editingSlotId, setEditingSlotId] = useState<string | null>(null);
+  const [editingSlotLabel, setEditingSlotLabel] = useState("");
+  const [editingSlotStartTime, setEditingSlotStartTime] = useState("");
+  const [editingSlotEndTime, setEditingSlotEndTime] = useState("");
+
+  const handleEditSlotStart = (slot: { id: string; label: string; start_time: string; end_time: string }) => {
+    setEditingSlotId(slot.id);
+    setEditingSlotLabel(slot.label);
+    setEditingSlotStartTime(slot.start_time);
+    setEditingSlotEndTime(slot.end_time);
+  };
+
+  const handleEditSlotSave = (id: string) => {
+    if (!editingSlotLabel.trim() || !editingSlotStartTime || !editingSlotEndTime) return;
+    updateServiceHour(id, editingSlotLabel, editingSlotStartTime, editingSlotEndTime);
+    setEditingSlotId(null);
   };
 
   // Loading spinner during session checks
@@ -832,21 +852,83 @@ export default function AdminDashboard() {
               {serviceHours.length === 0 ? (
                 <p className="text-xs text-neutral-400 text-center py-4">No active service hours configured.</p>
               ) : (
-                serviceHours.map((slot) => (
-                  <div key={slot.id} className="flex items-center justify-between bg-neutral-50 p-2 rounded border border-neutral-100 text-xs">
-                    <div>
-                      <p className="font-bold text-neutral-800">{slot.label}</p>
-                      <p className="text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                serviceHours.map((slot) => {
+                  const isEditing = editingSlotId === slot.id;
+                  return (
+                    <div key={slot.id} className="bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded border border-neutral-100 dark:border-neutral-800 text-xs">
+                      {isEditing ? (
+                        <div className="space-y-2 p-1">
+                          <input
+                            type="text"
+                            value={editingSlotLabel}
+                            onChange={(e) => setEditingSlotLabel(e.target.value)}
+                            placeholder="Slot Label"
+                            className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="block text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase">Start:</label>
+                              <input
+                                type="time"
+                                value={editingSlotStartTime}
+                                onChange={(e) => setEditingSlotStartTime(e.target.value)}
+                                className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-1 py-0.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase">End:</label>
+                              <input
+                                type="time"
+                                value={editingSlotEndTime}
+                                onChange={(e) => setEditingSlotEndTime(e.target.value)}
+                                className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-1 py-0.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 justify-end">
+                            <button
+                              type="button"
+                              onClick={() => setEditingSlotId(null)}
+                              className="text-[10px] font-bold text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded transition-all"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEditSlotSave(slot.id)}
+                              className="text-[10px] font-bold text-white bg-neutral-950 px-2.5 py-1 rounded transition-all"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between p-1">
+                          <div>
+                            <p className="font-bold text-neutral-800 dark:text-neutral-200">{slot.label}</p>
+                            <p className="text-neutral-500 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                          </div>
+                          <div className="flex gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleEditSlotStart(slot)}
+                              className="text-xs text-amber-700 hover:text-amber-900 font-semibold p-1 hover:underline cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => deleteServiceHour(slot.id)}
+                              className="text-xs text-red-500 hover:text-red-700 font-semibold p-1 hover:underline cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteServiceHour(slot.id)}
-                      className="text-red-500 hover:text-red-700 font-semibold p-1 hover:underline cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 

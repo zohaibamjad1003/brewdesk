@@ -73,6 +73,7 @@ interface BrewContextType {
   serviceHours: { id: string; label: string; start_time: string; end_time: string }[];
   addServiceHour: (label: string, start: string, end: string) => Promise<void>;
   deleteServiceHour: (id: string) => Promise<void>;
+  updateServiceHour: (id: string, label: string, start: string, end: string) => Promise<void>;
   updateAvatarUrl: (avatarUrl: string) => Promise<void>;
 }
 
@@ -698,6 +699,25 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Admin: Update Service Hour Slot
+  const updateServiceHour = async (id: string, label: string, start: string, end: string) => {
+    try {
+      const { error } = await supabase
+        .from("service_hours")
+        .update({
+          label: label.trim(),
+          start_time: start.split(":").length === 2 ? `${start}:00` : start,
+          end_time: end.split(":").length === 2 ? `${end}:00` : end,
+        })
+        .eq("id", id);
+      if (error) {
+        console.error("Error updating service hour:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating service hour:", err);
+    }
+  };
+
   // Update current user's profile image
   const updateAvatarUrl = async (avatarUrl: string) => {
     try {
@@ -751,6 +771,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         serviceHours,
         addServiceHour,
         deleteServiceHour,
+        updateServiceHour,
         updateAvatarUrl,
       }}
     >
