@@ -171,7 +171,7 @@ export default function BrewerQueue() {
 
   // FIFO Queue: orders that are Pending or On the way, sorted by oldest first, matching current active systemDate
   const activeOrders = orders
-    .filter((order) => order.status !== "Delivered" && order.createdAt.startsWith(systemDate))
+    .filter((order) => (order.status === "Pending" || order.status === "On the way") && order.createdAt.startsWith(systemDate))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   // Completed Orders: orders that are Delivered or Not Found, sorted by newest first, matching current active systemDate
