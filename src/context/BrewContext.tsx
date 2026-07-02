@@ -11,7 +11,7 @@ export interface Order {
   floor: string;
   drink: string;
   sugar: string; // "Sugar" or "No Sugar"
-  status: "Pending" | "On the way" | "Delivered";
+  status: "Pending" | "On the way" | "Delivered" | "Not Found";
   createdAt: string; // ISO string date
   feedbackRating?: number | null;
   feedbackComments?: string | null;
@@ -60,7 +60,7 @@ interface BrewContextType {
   signUp: (name: string, email: string, password: string, role: "Employee" | "Brewer") => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   placeOrder: (employeeName: string, floor: string, drink: string, sugar: string) => Promise<void>;
-  updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => Promise<void>;
+  updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered" | "Not Found") => Promise<void>;
   updateOrderDetails: (id: string, drink: string, sugar: string, floor: string) => Promise<void>;
   submitReview: (orderId: string, rating: number, comments: string) => Promise<void>;
   cooldownLimitEnabled: boolean;
@@ -604,7 +604,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Function to update an existing order's status
-  const updateOrderStatus = async (id: string, newStatus: "Pending" | "On the way" | "Delivered") => {
+  const updateOrderStatus = async (id: string, newStatus: "Pending" | "On the way" | "Delivered" | "Not Found") => {
     try {
       const { error } = await supabase
         .from("orders")

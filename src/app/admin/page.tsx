@@ -309,7 +309,7 @@ export default function AdminDashboard() {
     setSelectedFilterDate("");
   };
 
-  const getStatusTextClass = (status: "Pending" | "On the way" | "Delivered") => {
+  const getStatusTextClass = (status: "Pending" | "On the way" | "Delivered" | "Not Found") => {
     switch (status) {
       case "Pending":
         return "text-amber-700 bg-amber-50 ring-amber-600/20";
@@ -317,6 +317,8 @@ export default function AdminDashboard() {
         return "text-sky-700 bg-sky-50 ring-sky-600/20";
       case "Delivered":
         return "text-emerald-700 bg-emerald-50 ring-emerald-600/20";
+      case "Not Found":
+        return "text-red-700 bg-red-50 ring-red-650/20";
     }
   };
 

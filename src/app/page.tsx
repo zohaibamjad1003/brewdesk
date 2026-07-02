@@ -382,7 +382,7 @@ export default function Home() {
     : [];
 
   // Helper to render status badge with tailored colors
-  const getStatusBadge = (status: "Pending" | "On the way" | "Delivered") => {
+  const getStatusBadge = (status: "Pending" | "On the way" | "Delivered" | "Not Found") => {
     switch (status) {
       case "Pending":
         return (
@@ -403,6 +403,13 @@ export default function Home() {
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-800 ring-1 ring-inset ring-emerald-600/20">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Delivered
+          </span>
+        );
+      case "Not Found":
+        return (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2 py-1 text-xs font-semibold text-red-750 ring-1 ring-inset ring-red-650/20 select-none">
+            <span className="h-1.5 w-1.5 rounded-full bg-red-500" />
+            Not Found ❌
           </span>
         );
     }
@@ -1105,6 +1112,12 @@ export default function Home() {
                                 setEditFloor(order.floor);
                               }}
                             />
+
+                            {order.status === "Not Found" && (
+                              <p className="text-[10px] text-red-650 font-bold mt-2 bg-red-50/50 border border-red-200/50 rounded px-2.5 py-1.5 select-none animate-pulse max-w-xs leading-relaxed">
+                                ⚠️ Brewer couldn't find you at Floor {order.floor}. Please place a new order or check the workstation.
+                              </p>
+                            )}
                           </div>
                           <div className="flex flex-col items-end gap-2">
                             {getStatusBadge(order.status)}

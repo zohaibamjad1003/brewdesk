@@ -174,9 +174,9 @@ export default function BrewerQueue() {
     .filter((order) => order.status !== "Delivered" && order.createdAt.startsWith(systemDate))
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  // Completed Orders: orders that are Delivered, sorted by newest first, matching current active systemDate
+  // Completed Orders: orders that are Delivered or Not Found, sorted by newest first, matching current active systemDate
   const completedOrders = orders
-    .filter((order) => order.status === "Delivered" && order.createdAt.startsWith(systemDate))
+    .filter((order) => (order.status === "Delivered" || order.status === "Not Found") && order.createdAt.startsWith(systemDate))
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Count summaries
@@ -355,17 +355,28 @@ export default function BrewerQueue() {
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => handleNextStatus(order)}
-                        className={`w-full sm:w-auto px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all text-center ${
-                          order.status === "Pending"
-                            ? "bg-amber-600 text-white hover:bg-amber-700"
-                            : "bg-sky-600 text-white hover:bg-sky-700"
-                        }`}
-                      >
-                        {order.status === "Pending" ? "🏁 Start Delivery" : "✅ Mark Delivered"}
-                      </button>
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        {order.status === "On the way" && (
+                          <button
+                            type="button"
+                            onClick={() => updateOrderStatus(order.id, "Not Found")}
+                            className="px-3.5 py-2.5 rounded-lg text-sm font-bold text-red-700 bg-red-50 border border-red-200 hover:bg-red-100 transition-all text-center cursor-pointer flex items-center gap-1 shadow-sm"
+                          >
+                            <span>❌ Not Found</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleNextStatus(order)}
+                          className={`flex-grow sm:flex-none px-4 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all text-center cursor-pointer ${
+                            order.status === "Pending"
+                              ? "bg-amber-600 text-white hover:bg-amber-700"
+                              : "bg-sky-600 text-white hover:bg-sky-700"
+                          }`}
+                        >
+                          {order.status === "Pending" ? "🏁 Start Delivery" : "✅ Mark Delivered"}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -407,9 +418,15 @@ export default function BrewerQueue() {
                             👤 {order.employeeName} • 📍 {order.floor}
                           </p>
                         </div>
-                        <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                          Done ✓
-                        </span>
+                        {order.status === "Delivered" ? (
+                          <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200 select-none">
+                            Done ✓
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200 select-none">
+                            Not Found ❌
+                          </span>
+                        )}
                       </div>
                       
                       {/* Live customer feedback preview */}
