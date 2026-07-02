@@ -19,6 +19,7 @@ export interface EmployeeItem {
   id: string;
   name: string;
   contact: string; // Email or Phone/Contact info
+  avatar_url?: string;
 }
 
 // Define the Brewer details
@@ -27,6 +28,7 @@ export interface BrewerItem {
   name: string;
   contact: string; // Email or Phone/Contact info
   status: "Active" | "On Break" | "Off";
+  avatar_url?: string;
 }
 
 // Define the Order Review details
@@ -49,7 +51,7 @@ interface BrewContextType {
   employees: EmployeeItem[];
   brewers: BrewerItem[];
   reviews: Review[];
-  currentUser: { id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null;
+  currentUser: { id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off"; avatar_url?: string } | null;
   loading: boolean;
   login: (email: string, password: string, role: "Employee" | "Brewer" | "Admin") => Promise<{ success: boolean; error?: string }>;
   signUp: (name: string, email: string, password: string, role: "Employee" | "Brewer") => Promise<{ success: boolean; error?: string }>;
@@ -71,6 +73,7 @@ interface BrewContextType {
   serviceHours: { id: string; label: string; start_time: string; end_time: string }[];
   addServiceHour: (label: string, start: string, end: string) => Promise<void>;
   deleteServiceHour: (id: string) => Promise<void>;
+  updateAvatarUrl: (avatarUrl: string) => Promise<void>;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -157,7 +160,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, email, status")
+        .select("id, name, email, status, avatar_url")
         .eq("role", "brewer");
 
       if (error) {
@@ -170,6 +173,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         name: b.name,
         contact: b.email || "",
         status: (b.status === "On Break" ? "On Break" : b.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
+        avatar_url: b.avatar_url || "",
       }));
       setBrewers(mappedBrewers);
     } catch (err) {
@@ -182,7 +186,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, name, email")
+        .select("id, name, email, avatar_url")
         .eq("role", "employee");
 
       if (error) {
@@ -194,6 +198,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: e.id,
         name: e.name,
         contact: e.email || "N/A",
+        avatar_url: e.avatar_url || "",
       }));
       setEmployees(mappedEmployees);
     } catch (err) {
@@ -347,6 +352,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
             contact: profile?.email || session.user.email || "",
             floor: roleStr === "employee" ? "Floor 2" : undefined,
             status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
+            avatar_url: profile?.avatar_url || "",
           });
         }
       } catch (err) {
@@ -375,6 +381,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
           contact: profile?.email || session.user.email || "",
           floor: roleStr === "employee" ? "Floor 2" : undefined,
           status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
+          avatar_url: profile?.avatar_url || "",
         });
       } else {
         setCurrentUser(null);
@@ -691,6 +698,27 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Update current user's profile image
+  const updateAvatarUrl = async (avatarUrl: string) => {
+    try {
+      if (!currentUser) return;
+
+      // Optimistic update of local user state
+      setCurrentUser((prev) => prev ? { ...prev, avatar_url: avatarUrl } : null);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", currentUser.id);
+
+      if (error) {
+        console.error("Error updating avatar:", error.message);
+      }
+    } catch (err) {
+      console.error("Exception updating avatar:", err);
+    }
+  };
+
   return (
     <BrewContext.Provider
       value={{
@@ -723,6 +751,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         serviceHours,
         addServiceHour,
         deleteServiceHour,
+        updateAvatarUrl,
       }}
     >
       {children}

@@ -513,20 +513,22 @@ export default function AdminDashboard() {
               </select>
             </div>
             
-            <form onSubmit={handleAddFloorSubmit} className="flex gap-2 mb-4">
+            <form onSubmit={handleAddFloorSubmit} className="space-y-2 mb-4">
               <input
                 type="text"
                 value={newFloorName}
                 onChange={(e) => setNewFloorName(e.target.value)}
                 placeholder="e.g. Floor 4"
-                className="flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
               />
-              <button
-                type="submit"
-                className="bg-neutral-950 text-white rounded-lg px-3 py-1.5 text-sm font-bold shadow hover:bg-neutral-800 transition-all"
-              >
-                Add
-              </button>
+              <div className="flex">
+                <button
+                  type="submit"
+                  className="bg-neutral-950 text-white rounded-lg px-4 py-1 text-xs font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer w-fit"
+                >
+                  Add Floor +
+                </button>
+              </div>
             </form>
 
             <ul className="divide-y divide-neutral-100 max-h-56 overflow-y-auto pr-1">
@@ -610,21 +612,21 @@ export default function AdminDashboard() {
                 value={newEmployeeName}
                 onChange={(e) => setNewEmployeeName(e.target.value)}
                 placeholder="Employee Name"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
               />
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newEmployeeContact}
-                  onChange={(e) => setNewEmployeeContact(e.target.value)}
-                  placeholder="Email/Mobile No"
-                  className="flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
-                />
+              <input
+                type="text"
+                value={newEmployeeContact}
+                onChange={(e) => setNewEmployeeContact(e.target.value)}
+                placeholder="Email/Mobile No"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+              />
+              <div className="flex">
                 <button
                   type="submit"
-                  className="bg-neutral-950 text-white rounded-lg px-3 py-1.5 text-sm font-bold shadow hover:bg-neutral-800 transition-all"
+                  className="bg-neutral-950 text-white rounded-lg px-4 py-1 text-xs font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer w-fit"
                 >
-                  Add
+                  Add Employee +
                 </button>
               </div>
             </form>
@@ -633,11 +635,24 @@ export default function AdminDashboard() {
               {sortedEmployees.map((emp) => (
                 <li key={emp.id} className="py-2.5 text-sm">
                   <div className="flex items-center justify-between">
-                    <div className="flex flex-col min-w-0 pr-2">
-                      <span className="font-semibold text-neutral-800 truncate">{emp.name}</span>
-                      <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={emp.contact}>
-                        {emp.contact}
-                      </span>
+                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                      {emp.avatar_url ? (
+                        <img
+                          src={emp.avatar_url}
+                          alt={emp.name}
+                          className="h-8 w-8 rounded-full object-cover border border-neutral-200 dark:border-neutral-800 shrink-0"
+                        />
+                      ) : (
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-[10px] font-bold text-neutral-600 dark:text-neutral-300 uppercase">
+                          {emp.name.substring(0, 2)}
+                        </span>
+                      )}
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-semibold text-neutral-800 truncate">{emp.name}</span>
+                        <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={emp.contact}>
+                          {emp.contact}
+                        </span>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -675,21 +690,21 @@ export default function AdminDashboard() {
                 value={newBrewerName}
                 onChange={(e) => setNewBrewerName(e.target.value)}
                 placeholder="Brewer Name"
-                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
               />
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newBrewerContact}
-                  onChange={(e) => setNewBrewerContact(e.target.value)}
-                  placeholder="Email/Mobile No"
-                  className="flex-1 rounded-lg border border-neutral-300 px-3 py-1.5 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
-                />
+              <input
+                type="text"
+                value={newBrewerContact}
+                onChange={(e) => setNewBrewerContact(e.target.value)}
+                placeholder="Email/Mobile No"
+                className="w-full rounded-lg border border-neutral-300 px-3 py-1.5 text-xs text-neutral-900 focus:border-neutral-950 focus:outline-none focus:ring-1 focus:ring-neutral-950 shadow-sm"
+              />
+              <div className="flex">
                 <button
                   type="submit"
-                  className="bg-neutral-950 text-white rounded-lg px-3 py-1.5 text-sm font-bold shadow hover:bg-neutral-800 transition-all"
+                  className="bg-neutral-950 text-white rounded-lg px-4 py-1 text-xs font-bold shadow hover:bg-neutral-800 transition-all cursor-pointer w-fit"
                 >
-                  Add
+                  Add Brewer +
                 </button>
               </div>
             </form>
@@ -757,16 +772,29 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
-                        <div className="flex flex-col min-w-0 pr-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="font-semibold text-neutral-800 truncate">{bwr.name}</span>
-                            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold ring-1 ring-inset ${badgeClass}`}>
-                              {bwr.status}
+                        <div className="flex items-center gap-3 min-w-0 pr-2">
+                          {bwr.avatar_url ? (
+                            <img
+                              src={bwr.avatar_url}
+                              alt={bwr.name}
+                              className="h-8 w-8 rounded-full object-cover border border-neutral-200 dark:border-neutral-800 shrink-0"
+                            />
+                          ) : (
+                            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-neutral-100 dark:bg-neutral-800 text-[10px] font-bold text-neutral-600 dark:text-neutral-300 uppercase">
+                              {bwr.name.substring(0, 2)}
+                            </span>
+                          )}
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-neutral-800 truncate">{bwr.name}</span>
+                              <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-semibold ring-1 ring-inset ${badgeClass}`}>
+                                {bwr.status}
+                              </span>
+                            </div>
+                            <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={bwr.contact}>
+                              {bwr.contact}
                             </span>
                           </div>
-                          <span className="text-xs text-neutral-500 font-mono truncate max-w-[130px]" title={bwr.contact}>
-                            {bwr.contact}
-                          </span>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
                           <button

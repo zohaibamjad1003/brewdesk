@@ -6,7 +6,46 @@ import { useBrew } from "../context/BrewContext";
 
 export default function Navigation() {
   const pathname = usePathname();
-  const { currentUser, logout } = useBrew();
+  const { currentUser, logout, updateAvatarUrl } = useBrew();
+
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const MAX_WIDTH = 128;
+        const MAX_HEIGHT = 128;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+        updateAvatarUrl(dataUrl);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   // If not logged in, do not render navigation (keeps sign-in/signup screens clean)
   if (!currentUser) return null;
@@ -65,9 +104,35 @@ export default function Navigation() {
               {currentUser.role === "Brewer" ? "Brewer" : currentUser.role}
             </p>
           </div>
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-950 dark:bg-neutral-800 text-xs font-bold text-white uppercase select-none">
-            {currentUser.name.substring(0, 2)}
-          </span>
+
+          {/* Interactive Profile Avatar */}
+          <div className="relative group shrink-0">
+            <label htmlFor="avatar-upload" className="cursor-pointer block relative rounded-full overflow-hidden border border-neutral-200 dark:border-neutral-700 hover:border-neutral-900 dark:hover:border-neutral-100 transition-all select-none">
+              {currentUser.avatar_url ? (
+                <img
+                  src={currentUser.avatar_url}
+                  alt={currentUser.name}
+                  className="h-8 w-8 object-cover rounded-full"
+                />
+              ) : (
+                <span className="flex h-8 w-8 items-center justify-center bg-neutral-950 dark:bg-neutral-800 text-[10px] font-bold text-white uppercase">
+                  {currentUser.name.substring(0, 2)}
+                </span>
+              )}
+              {/* Overlay edit banner on hover */}
+              <div className="absolute inset-0 bg-black/45 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[8px] text-white font-extrabold uppercase tracking-wide leading-none">Edit</span>
+              </div>
+            </label>
+            <input
+              id="avatar-upload"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </div>
+
           <button
             onClick={logout}
             className="rounded-lg border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-3 py-1.5 text-xs font-bold text-neutral-700 dark:text-neutral-200 shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-all"
