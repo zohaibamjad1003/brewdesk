@@ -30,6 +30,7 @@ export default function AdminDashboard() {
     deleteServiceHour,
     updateServiceHour,
     getDailyOrderNumber,
+    submitReview,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -102,6 +103,28 @@ export default function AdminDashboard() {
     if (!editingSlotLabel.trim() || !editingSlotStartTime || !editingSlotEndTime) return;
     updateServiceHour(id, editingSlotLabel, editingSlotStartTime, editingSlotEndTime);
     setEditingSlotId(null);
+  };
+
+  // Mandatory feedback modal states for Admin
+  const [adminReviewRating, setAdminReviewRating] = useState(5);
+  const [adminReviewComments, setAdminReviewComments] = useState("");
+
+  // Find any unreviewed delivered orders placed by the Admin
+  const unreviewedOrder = currentUser
+    ? orders.find(
+        (o) =>
+          o.employeeId === currentUser.id &&
+          o.status === "Delivered" &&
+          (o.feedbackRating === undefined || o.feedbackRating === null)
+      )
+    : undefined;
+
+  const handleAdminReviewSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unreviewedOrder) return;
+    submitReview(unreviewedOrder.id, adminReviewRating, adminReviewComments);
+    setAdminReviewRating(5);
+    setAdminReviewComments("");
   };
 
   // Loading spinner during session checks
@@ -1041,6 +1064,71 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
-  );
+
+    {/* Mandatory Review Modal Overlay */}
+    {unreviewedOrder && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xl animate-fade-in-up">
+          <div className="text-center">
+            <span className="text-5xl select-none">🎉</span>
+            <h3 className="text-xl font-bold text-neutral-900 mt-4">
+              Confirm Delivery & Rate
+            </h3>
+            <p className="text-xs text-neutral-500 mt-1.5">
+              Your order of {unreviewedOrder.drink} ({unreviewedOrder.sugar}) has been delivered! Please rate it to confirm delivery.
+            </p>
+          </div>
+
+          <form onSubmit={handleAdminReviewSubmit} className="mt-6 space-y-4 text-left">
+            {/* 5-Star Selector */}
+            <div>
+              <label className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                Rating (Stars):
+              </label>
+              <div className="flex justify-center gap-3 text-3xl">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    type="button"
+                    key={star}
+                    onClick={() => setAdminReviewRating(star)}
+                    className={`transition-all hover:scale-125 cursor-pointer ${
+                      star <= adminReviewRating ? "opacity-100 transform scale-110" : "opacity-30"
+                    }`}
+                  >
+                    ⭐
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Feedback Comment */}
+            <div>
+              <label htmlFor="modal-comments" className="block text-xs font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                Review comments / suggestions:
+              </label>
+              <textarea
+                id="modal-comments"
+                rows={3}
+                required
+                value={adminReviewComments}
+                onChange={(e) => setAdminReviewComments(e.target.value)}
+                placeholder="e.g. Perfectly brewed! Thank you!"
+                className="w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+              />
+            </div>
+
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-lg bg-neutral-950 hover:bg-neutral-800 text-xs font-bold text-white shadow transition-all cursor-pointer flex-grow text-center"
+              >
+                Confirm & Submit Review ✓
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    )}
+  </div>
+);
 }
