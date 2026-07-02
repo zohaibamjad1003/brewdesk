@@ -849,40 +849,40 @@ export default function AdminDashboard() {
             
             {/* List of active slots */}
             {/* List of active slots */}
-            <ul className="divide-y divide-neutral-200 dark:divide-neutral-700 max-h-36 overflow-y-auto p-3 mb-4 border border-neutral-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900/40">
+            <ul className="divide-y divide-neutral-200 max-h-36 overflow-y-auto p-3 mb-4 border border-neutral-200 rounded-lg bg-white">
               {serviceHours.length === 0 ? (
-                <li className="text-xs text-neutral-500 dark:text-neutral-400 text-center py-4 font-medium">No active service hours configured.</li>
+                <li className="text-xs text-neutral-500 text-center py-4 font-medium">No active service hours configured.</li>
               ) : (
                 serviceHours.map((slot) => {
                   const isEditing = editingSlotId === slot.id;
                   return (
                     <li key={slot.id} className="py-2.5 first:pt-0 last:pb-0 text-sm">
                       {isEditing ? (
-                        <div className="space-y-2 bg-neutral-50 dark:bg-neutral-900/50 p-2 rounded border border-neutral-200 dark:border-neutral-800 shadow-inner">
+                        <div className="space-y-2 bg-neutral-50 p-2 rounded border border-neutral-200 shadow-inner">
                           <input
                             type="text"
                             value={editingSlotLabel}
                             onChange={(e) => setEditingSlotLabel(e.target.value)}
                             placeholder="Slot Label"
-                            className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                            className="w-full rounded border border-neutral-300 bg-white px-2 py-1 text-xs text-neutral-900 focus:outline-none"
                           />
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="block text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase">Start:</label>
+                              <label className="block text-[9px] font-bold text-neutral-500 uppercase">Start:</label>
                               <input
                                 type="time"
                                 value={editingSlotStartTime}
                                 onChange={(e) => setEditingSlotStartTime(e.target.value)}
-                                className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-1 py-0.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                                className="w-full rounded border border-neutral-300 bg-white px-1 py-0.5 text-xs text-neutral-900 focus:outline-none"
                               />
                             </div>
                             <div>
-                              <label className="block text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase">End:</label>
+                              <label className="block text-[9px] font-bold text-neutral-500 uppercase">End:</label>
                               <input
                                 type="time"
                                 value={editingSlotEndTime}
                                 onChange={(e) => setEditingSlotEndTime(e.target.value)}
-                                className="w-full rounded border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-1 py-0.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none"
+                                className="w-full rounded border border-neutral-300 bg-white px-1 py-0.5 text-xs text-neutral-900 focus:outline-none"
                               />
                             </div>
                           </div>
@@ -890,7 +890,7 @@ export default function AdminDashboard() {
                             <button
                               type="button"
                               onClick={() => setEditingSlotId(null)}
-                              className="text-[10px] font-bold text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 px-2 py-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded transition-all"
+                              className="text-[10px] font-bold text-neutral-600 hover:text-neutral-800 px-2 py-1 bg-white border border-neutral-200 rounded transition-all"
                             >
                               Cancel
                             </button>
@@ -906,8 +906,8 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="flex items-center justify-between">
                           <div className="min-w-0 pr-2">
-                            <p className="font-bold text-neutral-900 dark:text-neutral-100 truncate">{slot.label}</p>
-                            <p className="text-xs font-bold text-neutral-700 dark:text-neutral-350 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
+                            <p className="font-bold text-neutral-900 truncate">{slot.label}</p>
+                            <p className="text-xs font-bold text-neutral-650 font-mono mt-0.5">{slot.start_time} - {slot.end_time}</p>
                           </div>
                           <div className="flex gap-1.5 shrink-0">
                             <button
