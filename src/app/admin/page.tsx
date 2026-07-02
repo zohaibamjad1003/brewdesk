@@ -31,6 +31,8 @@ export default function AdminDashboard() {
     updateServiceHour,
     getDailyOrderNumber,
     submitReview,
+    cooldownLimitEnabled,
+    toggleCooldownLimit,
   } = useBrew();
 
   // Analytics Filter States (Day vs All Time)
@@ -1024,6 +1026,23 @@ export default function AdminDashboard() {
                 Add Slot ⏰
               </button>
             </form>
+
+            {/* 3-Hour Cooldown Limit Settings */}
+            <div className="mt-4 pt-4 border-t border-neutral-100">
+              <h4 className="text-xs font-bold text-neutral-900 mb-1">Ordering Limitations</h4>
+              <p className="text-[10px] text-neutral-500 mb-3">Enforce a strict 3-hour cooldown delay between beverage requests for employees.</p>
+              <button
+                type="button"
+                onClick={() => toggleCooldownLimit(!cooldownLimitEnabled)}
+                className={`w-full py-2 rounded-lg text-xs font-bold shadow transition-all cursor-pointer border ${
+                  cooldownLimitEnabled 
+                    ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" 
+                    : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                }`}
+              >
+                {cooldownLimitEnabled ? "Remove 3-Hour Limit 🔓" : "Add 3-Hour Limit 🔒"}
+              </button>
+            </div>
           </div>
         </div>
       </div>

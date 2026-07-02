@@ -63,6 +63,8 @@ interface BrewContextType {
   updateOrderStatus: (id: string, status: "Pending" | "On the way" | "Delivered") => Promise<void>;
   updateOrderDetails: (id: string, drink: string, sugar: string, floor: string) => Promise<void>;
   submitReview: (orderId: string, rating: number, comments: string) => Promise<void>;
+  cooldownLimitEnabled: boolean;
+  toggleCooldownLimit: (enabled: boolean) => Promise<void>;
   addFloor: (floorName: string) => void;
   deleteFloor: (floorName: string) => void;
   updateFloor: (oldFloorName: string, newFloorName: string) => void;
@@ -100,6 +102,9 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Multiple Beverage service hours slots
   const [serviceHours, setServiceHours] = useState<{ id: string; label: string; start_time: string; end_time: string }[]>([]);
+
+  // 3-hour cooldown limit configuration
+  const [cooldownLimitEnabled, setCooldownLimitEnabled] = useState(true);
 
   // Authenticated user and profile resolution loading states
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off"; avatar_url?: string } | null>(null);
@@ -290,6 +295,36 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Fetch cooldown setting status from database
+  const fetchCooldownSetting = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("settings")
+        .select("*")
+        .eq("key", "cooldown_limit_enabled")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Error fetching cooldown setting:", error.message);
+        return;
+      }
+
+      if (data) {
+        const isEnabled = data.value !== undefined ? data.value === "true" : data.start_time === "true";
+        setCooldownLimitEnabled(isEnabled);
+      } else {
+        setCooldownLimitEnabled(true);
+        // Try fallback-supported insert of default enabled limit
+        await supabase.from("settings").insert({
+          key: "cooldown_limit_enabled",
+          start_time: "true"
+        });
+      }
+    } catch (err) {
+      console.error("Exception fetching cooldown setting:", err);
+    }
+  };
+
   // Fetch initial database items and listen to real-time updates
   useEffect(() => {
     fetchOrders();
@@ -297,6 +332,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchEmployeesList();
     fetchFloors();
     fetchServiceHours();
+    fetchCooldownSetting();
 
     const ordersChannel = supabase
       .channel("realtime-orders")
@@ -343,11 +379,23 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       )
       .subscribe();
 
+    const settingsTableChannel = supabase
+      .channel("realtime-settings-table")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "settings" },
+        () => {
+          fetchCooldownSetting();
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(ordersChannel);
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(floorsChannel);
       supabase.removeChannel(settingsChannel);
+      supabase.removeChannel(settingsTableChannel);
     };
   }, []);
 
@@ -798,6 +846,32 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Admin: Toggle the 3-hour cooldown limit setting
+  const toggleCooldownLimit = async (enabled: boolean) => {
+    try {
+      setCooldownLimitEnabled(enabled);
+      const valStr = enabled ? "true" : "false";
+
+      const { error } = await supabase
+        .from("settings")
+        .update({ value: valStr })
+        .eq("key", "cooldown_limit_enabled");
+
+      if (error) {
+        // Fallback update to start_time column
+        const { error: fallbackError } = await supabase
+          .from("settings")
+          .update({ start_time: valStr })
+          .eq("key", "cooldown_limit_enabled");
+        if (fallbackError) {
+          console.error("Error toggling cooldown limit fallback:", fallbackError.message);
+        }
+      }
+    } catch (err) {
+      console.error("Exception toggling cooldown limit:", err);
+    }
+  };
+
   // Update current user's profile image
   const updateAvatarUrl = async (avatarUrl: string) => {
     try {
@@ -860,6 +934,8 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateAvatarUrl,
         getDailyOrderNumber,
         updateOrderDetails,
+        cooldownLimitEnabled,
+        toggleCooldownLimit,
       }}
     >
       {children}

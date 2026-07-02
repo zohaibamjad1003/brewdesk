@@ -70,6 +70,7 @@ export default function Home() {
     serviceHours,
     getDailyOrderNumber,
     updateOrderDetails,
+    cooldownLimitEnabled,
   } = useBrew();
 
   // Automatic client-side redirect based on user role (Only redirect Brewers)
@@ -191,7 +192,7 @@ export default function Home() {
     )[0];
 
     const calculateCooldown = () => {
-      if (!lastOrder) {
+      if (!lastOrder || !cooldownLimitEnabled) {
         setCooldownRemaining(0);
         return;
       }
@@ -201,8 +202,9 @@ export default function Home() {
       const diffMs = currentSimTime.getTime() - lastOrderTime.getTime();
       const diffMins = diffMs / (1000 * 60);
 
-      if (diffMins < 60) {
-        setCooldownRemaining(Math.ceil(60 - diffMins));
+      const limitMins = 180; // 3-hour limit
+      if (diffMins < limitMins) {
+        setCooldownRemaining(Math.ceil(limitMins - diffMins));
       } else {
         setCooldownRemaining(0);
       }
@@ -314,11 +316,14 @@ export default function Home() {
       const lastOrder = [...myAllOrders].sort(
         (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       )[0];
-      if (lastOrder) {
+      if (lastOrder && cooldownLimitEnabled) {
         const realNow = new Date();
         const currentSimTime = new Date(`${systemDate}T${realNow.toTimeString().split(" ")[0]}`);
         const diffMins = (currentSimTime.getTime() - new Date(lastOrder.createdAt).getTime()) / (1000 * 60);
-        if (diffMins < 60) return;
+        if (diffMins < 180) {
+          alert(`3-Hour Cooldown limit is active. Please wait ${Math.ceil(180 - diffMins)} minutes before placing your next order.`);
+          return;
+        }
       }
     }
 
@@ -942,7 +947,7 @@ export default function Home() {
                 </div>
               ) : currentUser.role !== "Admin" && cooldownRemaining > 0 ? (
                 <div className="rounded-lg bg-neutral-50 border border-neutral-200 p-3.5 text-xs font-semibold text-neutral-500 text-center select-none shadow-sm">
-                  ☕ Hourly Cooldown: Please wait {cooldownRemaining} minutes before placing your next order.
+                  ☕ 3-Hour Cooldown: Please wait {cooldownRemaining} minutes before placing your next order.
                 </div>
               ) : (
                 <button
