@@ -96,7 +96,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [serviceHours, setServiceHours] = useState<{ id: string; label: string; start_time: string; end_time: string }[]>([]);
 
   // Authenticated user and profile resolution loading states
-  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off" } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off"; avatar_url?: string } | null>(null);
   
   const [loading, setLoading] = useState(true);
 
