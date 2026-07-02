@@ -223,10 +223,14 @@ export default function AdminDashboard() {
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
 
-  // Reviews/Feedback calculations
-  const totalReviews = reviews.length;
+  // Reviews/Feedback calculations for selected day/scope
+  const dayReviews = filterMode === "all"
+    ? reviews
+    : reviews.filter((rev) => rev.createdAt.split("T")[0] === activeFilterDate);
+
+  const totalReviews = dayReviews.length;
   const avgRating = totalReviews
-    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
+    ? (dayReviews.reduce((acc, r) => acc + r.rating, 0) / totalReviews).toFixed(1)
     : "N/A";
 
   const handleAddFloorSubmit = (e: React.FormEvent) => {
@@ -530,11 +534,13 @@ export default function AdminDashboard() {
         <h3 className="text-lg font-bold text-neutral-900 mb-2">Customer Feedback & Reviews</h3>
         <p className="text-xs text-neutral-500 mb-6">Real-time improvements and rating logs submitted by employees.</p>
 
-        {reviews.length === 0 ? (
-          <div className="text-center py-10 text-neutral-400 text-sm">No reviews submitted by employees yet.</div>
+        {dayReviews.length === 0 ? (
+          <div className="text-center py-10 text-neutral-400 text-sm">
+            No reviews submitted by employees for {filterMode === "all" ? "All Time" : activeFilterDate}.
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[360px] overflow-y-auto pr-1">
-            {[...reviews].map((rev) => (
+            {[...dayReviews].map((rev) => (
               <div key={rev.id} className="rounded-lg border border-neutral-200 bg-neutral-50/50 p-4 shadow-sm">
                 <div className="flex items-center justify-between">
                   <div>
