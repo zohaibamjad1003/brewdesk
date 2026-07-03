@@ -773,33 +773,6 @@ export default function Home() {
                     {isSubmitting ? "Signing In..." : "Sign In"}
                   </button>
                   <GoogleSignInButton />
-                  {/* Dev bypass helper fills */}
-                  <div className="mt-6 border-t border-neutral-100 pt-4 text-center">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Quick Autofill Logins</span>
-                    <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                      <button
-                        type="button"
-                        onClick={() => applyBypass("alex@brewdesk.com", "Employee")}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
-                      >
-                        Employee (Alex)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => applyBypass("raju@brewdesk.com", "Brewer")}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
-                      >
-                        Brewer (Raju)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => applyBypass("admin@brewdesk.com", "Admin")}
-                        className="px-2.5 py-1 text-[11px] font-semibold bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded text-neutral-700 transition-all"
-                      >
-                        Admin Panel
-                      </button>
-                    </div>
-                  </div>
                 </form>
               )}
 
