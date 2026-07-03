@@ -72,16 +72,18 @@ export default function Home() {
     getDailyOrderNumber,
     updateOrderDetails,
     cooldownLimitEnabled,
+    needsRoleSelection,
+    selectUserRole,
   } = useBrew();
 
   // Automatic client-side redirect based on user role (Only redirect Brewers)
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && !needsRoleSelection) {
       if (currentUser.role === "Brewer") {
         router.push("/brewer");
       }
     }
-  }, [currentUser, router]);
+  }, [currentUser, needsRoleSelection, router]);
 
   // Login form states
   const [activeTab, setActiveTab] = useState<"login" | "signup">("signup");
@@ -121,6 +123,42 @@ export default function Home() {
 
   // Submission spinner
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Onboarding role selection states
+  const [onboardName, setOnboardName] = useState("");
+  const [onboardRole, setOnboardRole] = useState<"Employee" | "Brewer">("Employee");
+  const [onboardFloor, setOnboardFloor] = useState("");
+  const [onboardError, setOnboardError] = useState("");
+
+  useEffect(() => {
+    if (currentUser && needsRoleSelection) {
+      setOnboardName(currentUser.name || "");
+      if (floors.length > 0) {
+        setOnboardFloor(floors[0]);
+      }
+    }
+  }, [currentUser, needsRoleSelection, floors]);
+
+  const handleOnboardSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onboardName.trim() === "") {
+      setOnboardError("Please enter your name.");
+      return;
+    }
+    if (onboardRole === "Employee" && !onboardFloor) {
+      setOnboardError("Please select your office floor.");
+      return;
+    }
+    try {
+      setIsSubmitting(true);
+      setOnboardError("");
+      await selectUserRole(onboardRole, onboardName, onboardRole === "Employee" ? onboardFloor : undefined);
+    } catch (err: any) {
+      setOnboardError(err.message || "Failed to set role. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Order form states
   const [selectedFloor, setSelectedFloor] = useState("");
@@ -445,11 +483,108 @@ export default function Home() {
   }
 
   // RENDER GATE: If not logged in, render Signup/Login form (Mobile Card Style)
-  if (!currentUser) {
+  if (!currentUser || needsRoleSelection) {
     return (
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8 bg-white p-8 rounded-2xl border border-neutral-200 shadow-lg">
-          {showForgotFlow ? (
+          {needsRoleSelection ? (
+            /* ROLE SELECTION ONBOARDING FLOW */
+            <form onSubmit={handleOnboardSubmit} className="space-y-6">
+              <div className="text-center">
+                <span className="text-5xl select-none">👋</span>
+                <h2 className="mt-4 text-2xl font-extrabold tracking-tight text-neutral-900">
+                  Welcome to BrewDesk
+                </h2>
+                <p className="mt-2 text-xs text-neutral-500">
+                  Please select your workspace profile details to complete setup.
+                </p>
+              </div>
+
+              {onboardError && (
+                <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-700">
+                  {onboardError}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="onboard-name" className="block text-sm font-semibold text-neutral-700">
+                  Full Name
+                </label>
+                <input
+                  id="onboard-name"
+                  type="text"
+                  required
+                  value={onboardName}
+                  onChange={(e) => setOnboardName(e.target.value)}
+                  placeholder="e.g. Alex Green"
+                  className="mt-1.5 w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-neutral-700 mb-2">
+                  Select Your Role
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setOnboardRole("Employee")}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                      onboardRole === "Employee"
+                        ? "border-neutral-950 bg-neutral-950 text-white shadow"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <span className="text-2xl mb-1">💼</span>
+                    <span className="text-xs font-bold">Employee</span>
+                    <span className="text-[10px] opacity-80 mt-0.5">Order beverages</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setOnboardRole("Brewer")}
+                    className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
+                      onboardRole === "Brewer"
+                        ? "border-neutral-950 bg-neutral-950 text-white shadow"
+                        : "border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50"
+                    }`}
+                  >
+                    <span className="text-2xl mb-1">☕</span>
+                    <span className="text-xs font-bold">Brewer</span>
+                    <span className="text-[10px] opacity-80 mt-0.5">Prepare drinks</span>
+                  </button>
+                </div>
+              </div>
+
+              {onboardRole === "Employee" && (
+                <div>
+                  <label htmlFor="onboard-floor" className="block text-sm font-semibold text-neutral-700">
+                    Office Floor Location
+                  </label>
+                  <select
+                    id="onboard-floor"
+                    value={onboardFloor}
+                    onChange={(e) => setOnboardFloor(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 focus:border-neutral-950 focus:outline-none shadow-sm"
+                  >
+                    {floors.map((fl) => (
+                      <option key={fl} value={fl}>
+                        {fl}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full flex justify-center items-center rounded-lg bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white shadow hover:bg-neutral-800 transition-all disabled:opacity-50"
+              >
+                {isSubmitting ? "Saving details..." : "Save & Continue"}
+              </button>
+            </form>
+          ) : showForgotFlow ? (
             /* FORGOT PASSWORD FLOW */
             <form onSubmit={handleForgotSubmit} className="space-y-4">
               <div className="text-center">

@@ -82,6 +82,8 @@ interface BrewContextType {
   updateServiceHour: (id: string, label: string, start: string, end: string) => Promise<void>;
   updateAvatarUrl: (avatarUrl: string) => Promise<void>;
   getDailyOrderNumber: (orderId: string, createdAt: string) => string;
+  needsRoleSelection: boolean;
+  selectUserRole: (role: "Employee" | "Brewer", name: string, floorName?: string) => Promise<void>;
 }
 
 const BrewContext = createContext<BrewContextType | undefined>(undefined);
@@ -109,6 +111,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Authenticated user and profile resolution loading states
   const [currentUser, setCurrentUser] = useState<{ id: string; name: string; role: "Employee" | "Brewer" | "Admin"; contact: string; floor?: string; status?: "Active" | "On Break" | "Off"; avatar_url?: string } | null>(null);
   
+  const [needsRoleSelection, setNeedsRoleSelection] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // State to hold list of orders
@@ -426,20 +429,30 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
-          const metadata = session.user.user_metadata;
-          const name = profile?.name || metadata?.name || "Anonymous Employee";
-          const roleStr = profile?.role || metadata?.role || "employee";
-          const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
-
-          setCurrentUser({
-            id: session.user.id,
-            name,
-            role: mappedRole,
-            contact: profile?.email || session.user.email || "",
-            floor: roleStr === "employee" ? "Floor 2" : undefined,
-            status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
-            avatar_url: profile?.avatar_url || "",
-          });
+          if (!profile) {
+            setNeedsRoleSelection(true);
+            setCurrentUser({
+              id: session.user.id,
+              name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "New User",
+              role: "Employee",
+              contact: session.user.email || "",
+              status: "Off",
+            });
+          } else {
+            setNeedsRoleSelection(false);
+            const name = profile.name || "Anonymous Employee";
+            const roleStr = profile.role || "employee";
+            const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
+            setCurrentUser({
+              id: session.user.id,
+              name,
+              role: mappedRole,
+              contact: profile.email || session.user.email || "",
+              floor: profile.floor_name || undefined,
+              status: (profile.status === "On Break" ? "On Break" : profile.status === "Off" ? "Off" : "Active") as any,
+              avatar_url: profile.avatar_url || "",
+            });
+          }
         }
       } catch (err) {
         console.error("Session lookup error:", err);
@@ -455,21 +468,32 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id);
-        const metadata = session.user.user_metadata;
-        const name = profile?.name || metadata?.name || "Anonymous Employee";
-        const roleStr = profile?.role || metadata?.role || "employee";
-        const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
-
-        setCurrentUser({
-          id: session.user.id,
-          name,
-          role: mappedRole,
-          contact: profile?.email || session.user.email || "",
-          floor: roleStr === "employee" ? "Floor 2" : undefined,
-          status: (profile?.status === "On Break" ? "On Break" : profile?.status === "Off" ? "Off" : "Active") as "Active" | "On Break" | "Off",
-          avatar_url: profile?.avatar_url || "",
-        });
+        if (!profile) {
+          setNeedsRoleSelection(true);
+          setCurrentUser({
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split("@")[0] || "New User",
+            role: "Employee",
+            contact: session.user.email || "",
+            status: "Off",
+          });
+        } else {
+          setNeedsRoleSelection(false);
+          const name = profile.name || "Anonymous Employee";
+          const roleStr = profile.role || "employee";
+          const mappedRole = roleStr === "admin" ? "Admin" : roleStr === "brewer" ? "Brewer" : "Employee";
+          setCurrentUser({
+            id: session.user.id,
+            name,
+            role: mappedRole,
+            contact: profile.email || session.user.email || "",
+            floor: profile.floor_name || undefined,
+            status: (profile.status === "On Break" ? "On Break" : profile.status === "Off" ? "Off" : "Active") as any,
+            avatar_url: profile.avatar_url || "",
+          });
+        }
       } else {
+        setNeedsRoleSelection(false);
         setCurrentUser(null);
       }
       setLoading(false);
@@ -479,6 +503,48 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Save selected user role during Google signup onboarding
+  const selectUserRole = async (role: "Employee" | "Brewer", name: string, floorName?: string) => {
+    if (!currentUser?.id) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from("profiles")
+        .insert({
+          id: currentUser.id,
+          name: name.trim(),
+          role: role.toLowerCase() as "employee" | "brewer",
+          floor_name: role === "Employee" ? floorName : null,
+          status: role === "Brewer" ? "Off" : null
+        });
+
+      if (error) {
+        console.error("Error creating profile:", error.message);
+        throw error;
+      }
+
+      // Re-fetch profile to update context
+      const profile = await fetchUserProfile(currentUser.id);
+      if (profile) {
+        setCurrentUser({
+          id: currentUser.id,
+          name: profile.name,
+          role: role,
+          contact: currentUser.contact,
+          floor: profile.floor_name || undefined,
+          status: profile.status as any,
+          avatar_url: profile.avatar_url || "",
+        });
+        setNeedsRoleSelection(false);
+      }
+    } catch (err) {
+      console.error("Failed to select role:", err);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Async Login with Role validation
   const login = async (email: string, password: string, role: "Employee" | "Brewer" | "Admin"): Promise<{ success: boolean; error?: string }> => {
@@ -942,6 +1008,8 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updateOrderDetails,
         cooldownLimitEnabled,
         toggleCooldownLimit,
+        needsRoleSelection,
+        selectUserRole,
       }}
     >
       {children}
