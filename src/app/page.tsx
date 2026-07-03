@@ -648,9 +648,6 @@ export default function Home() {
                 <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-neutral-900 animate-pulse">
                   Welcome to BrewDesk
                 </h2>
-                <p className="mt-2 text-sm text-neutral-500">
-                  Supabase Auth Workstation Gate.
-                </p>
               </div>
 
               {/* Form Tabs */}
@@ -677,7 +674,7 @@ export default function Home() {
                       : "border-transparent text-neutral-400 hover:text-neutral-600"
                     }`}
                 >
-                  Sign Up (Register)
+                  Sign Up
                 </button>
               </div>
 
