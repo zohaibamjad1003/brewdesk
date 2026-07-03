@@ -429,7 +429,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           const profile = await fetchUserProfile(session.user.id);
-          if (!profile) {
+          if (!profile || !profile.role) {
             setNeedsRoleSelection(true);
             setCurrentUser({
               id: session.user.id,
@@ -468,7 +468,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       if (session?.user) {
         const profile = await fetchUserProfile(session.user.id);
-        if (!profile) {
+        if (!profile || !profile.role) {
           setNeedsRoleSelection(true);
           setCurrentUser({
             id: session.user.id,
@@ -511,7 +511,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const { error } = await supabase
         .from("profiles")
-        .insert({
+        .upsert({
           id: currentUser.id,
           name: name.trim(),
           role: role.toLowerCase() as "employee" | "brewer",
