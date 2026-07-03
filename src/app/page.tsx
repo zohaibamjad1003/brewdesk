@@ -138,6 +138,30 @@ function HomeContent() {
   const urlError = searchParams.get('error');
   const urlErrorDescription = searchParams.get('error_description');
 
+  // Support client-side code exchange if redirected directly to root page with ?code=
+  useEffect(() => {
+    const code = searchParams.get("code");
+    if (code) {
+      const exchangeCode = async () => {
+        try {
+          setIsSubmitting(true);
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            console.error("Failed to exchange code for session:", error.message);
+          } else {
+            // Successfully logged in! Redirect to root to clean URL
+            router.replace("/");
+          }
+        } catch (err) {
+          console.error("Code exchange exception:", err);
+        } finally {
+          setIsSubmitting(false);
+        }
+      };
+      exchangeCode();
+    }
+  }, [searchParams, router]);
+
   // Submission spinner
   const [isSubmitting, setIsSubmitting] = useState(false);
 
