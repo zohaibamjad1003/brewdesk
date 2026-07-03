@@ -297,8 +297,14 @@ function HomeContent() {
 
   // Sync default floor when the simulated user changes
   useEffect(() => {
+    let savedFloor = "";
+    if (typeof window !== "undefined") {
+      savedFloor = localStorage.getItem("saved_floor") || "";
+    }
     if (currentUser?.floor) {
       setSelectedFloor(currentUser.floor);
+    } else if (savedFloor && floors.includes(savedFloor)) {
+      setSelectedFloor(savedFloor);
     } else {
       setSelectedFloor(floors[0] || "");
     }
@@ -410,6 +416,9 @@ function HomeContent() {
     if (!selectedFloor || !selectedDrink || !selectedSugar || !orderName.trim()) return;
 
     placeOrder(orderName, selectedFloor, selectedDrink, selectedSugar);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("saved_floor", selectedFloor);
+    }
 
     if (currentUser.role === "Admin") {
       setOrderName(currentUser.name); // Reset back to default Admin name

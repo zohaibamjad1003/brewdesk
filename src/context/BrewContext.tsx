@@ -448,7 +448,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
               name,
               role: mappedRole,
               contact: profile.email || session.user.email || "",
-              floor: profile.floor_name || undefined,
+              floor: undefined,
               status: (profile.status === "On Break" ? "On Break" : profile.status === "Off" ? "Off" : "Active") as any,
               avatar_url: profile.avatar_url || "",
             });
@@ -487,7 +487,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
             name,
             role: mappedRole,
             contact: profile.email || session.user.email || "",
-            floor: profile.floor_name || undefined,
+            floor: undefined,
             status: (profile.status === "On Break" ? "On Break" : profile.status === "Off" ? "Off" : "Active") as any,
             avatar_url: profile.avatar_url || "",
           });
@@ -515,13 +515,17 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: currentUser.id,
           name: name.trim(),
           role: role.toLowerCase() as "employee" | "brewer",
-          floor_name: role === "Employee" ? floorName : null,
           status: role === "Brewer" ? "Off" : null
         });
 
       if (error) {
         console.error("Error creating profile:", error.message);
         throw error;
+      }
+
+      // Save floor to local storage if employee
+      if (role === "Employee" && floorName) {
+        localStorage.setItem("saved_floor", floorName);
       }
 
       // Re-fetch profile to update context
@@ -532,7 +536,7 @@ export const BrewProvider: React.FC<{ children: React.ReactNode }> = ({ children
           name: profile.name,
           role: role,
           contact: currentUser.contact,
-          floor: profile.floor_name || undefined,
+          floor: floorName || undefined,
           status: profile.status as any,
           avatar_url: profile.avatar_url || "",
         });
