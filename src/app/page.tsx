@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 import { useBrew } from "../context/BrewContext";
 import GoogleSignInButton from '@/components/GoogleSignInButton';
@@ -53,6 +53,19 @@ const EditGraceTrigger = ({
 };
 
 export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="flex-grow flex flex-col items-center justify-center min-h-[50vh] p-8">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-neutral-200 border-t-neutral-800" />
+        <p className="mt-4 text-sm font-semibold text-neutral-500">Loading BrewDesk...</p>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
   const router = useRouter();
   const {
     floors,
@@ -120,6 +133,10 @@ export default function Home() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotMsg, setForgotMsg] = useState("");
   const [forgotError, setForgotError] = useState("");
+
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get('error');
+  const urlErrorDescription = searchParams.get('error_description');
 
   // Submission spinner
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -681,9 +698,9 @@ export default function Home() {
               {/* Tab 1: SIGN IN */}
               {activeTab === "login" && (
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  {authError && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-700">
-                      {authError}
+                  {(authError || urlError) && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800">
+                      {authError || urlErrorDescription || urlError}
                     </div>
                   )}
 
@@ -779,9 +796,9 @@ export default function Home() {
               {/* Tab 2: SIGN UP */}
               {activeTab === "signup" && (
                 <div className="py-6 space-y-4">
-                  {signUpError && (
-                    <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-700">
-                      {signUpError}
+                  {(signUpError || urlError) && (
+                    <div className="rounded-lg bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800">
+                      {signUpError || urlErrorDescription || urlError}
                     </div>
                   )}
                   <p className="text-sm text-neutral-500 text-center select-none leading-relaxed">
